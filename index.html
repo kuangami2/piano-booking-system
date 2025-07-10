@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>琴房预约系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自定义样式 */
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .room-card:hover {
+            transform: translateY(-5px);
+            transition: transform 0.3s ease;
+        }
+        
+        .time-slot {
+            transition: all 0.3s ease;
+        }
+        
+        .time-slot:hover:not(.occupied):not(.selected) {
+            background-color: #e3f2fd;
+            transform: scale(1.05);
+        }
+        
+        .time-slot.available {
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+        }
+        
+        .time-slot.occupied {
+            background-color: #f44336;
+            color: white;
+            cursor: not-allowed;
+        }
+        
+        .time-slot.selected {
+            background-color: #2196f3;
+            color: white;
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+        }
+        
+        .instrument-checkbox:checked + label {
+            background-color: #2196f3;
+            color: white;
+            border-color: #2196f3;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .calendar-cell {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .calendar-cell:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .calendar-cell.selected {
+            background-color: #2196f3;
+            color: white;
+        }
+        
+        .calendar-cell.disabled {
+            color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <nav class="gradient-bg text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">琴房预约系统</h1>
+            <div id="userInfo" class="hidden">
+                <span id="welcomeText" class="mr-4"></span>
+                <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded">退出</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- 登录界面 -->
+        <div id="loginSection" class="fade-in">
+            <div class="bg-white rounded-lg card-shadow p-8 max-w-md mx-auto">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">用户登录</h2>
+                
+                <form id="loginForm" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                        <input type="text" id="username" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="请输入用户名">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                        <input type="password" id="password" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="请输入密码">
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <button type="button" id="registerBtn" 
+                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                            注册
+                        </button>
+                        <button type="submit" 
+                                class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                            登录
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 注册界面 -->
+        <div id="registerSection" class="hidden fade-in">
+            <div class="bg-white rounded-lg card-shadow p-8 max-w-md mx-auto">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">用户注册</h2>
+                
+                <form id="registerForm" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                        <input type="text" id="regUsername" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="请输入用户名">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                        <input type="password" id="regPassword" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="请输入密码">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">确认密码</label>
+                        <input type="password" id="regPasswordConfirm" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="请再次输入密码">
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <button type="button" id="backToLoginBtn" 
+                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                            返回
+                        </button>
+                        <button type="submit" 
+                                class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                            注册
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 房间选择界面 -->
+        <div id="roomSection" class="hidden fade-in">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">选择琴房</h2>
+            
+            <div class="grid md:grid-cols-1 gap-6">
+                <!-- 房间卡片将通过JavaScript动态生成 -->
+                <div id="roomCards" class="space-y-6"></div>
+            </div>
+        </div>
+
+        <!-- 乐器选择界面 -->
+        <div id="instrumentSection" class="hidden fade-in">
+            <div class="bg-white rounded-lg card-shadow p-8">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">选择乐器</h2>
+                
+                <div class="mb-6">
+                    <p class="text-lg text-gray-600 text-center">房间：<span id="selectedRoomName" class="font-semibold text-blue-600"></span></p>
+                </div>
+                
+                <div id="instrumentsList" class="grid grid-cols-2 gap-4 mb-8">
+                    <!-- 乐器选择将通过JavaScript动态生成 -->
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button id="backToRoomBtn" 
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                        返回
+                    </button>
+                    <button id="toDateBtn" 
+                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                        下一步
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 日期选择界面 -->
+        <div id="dateSection" class="hidden fade-in">
+            <div class="bg-white rounded-lg card-shadow p-8">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">选择日期</h2>
+                
+                <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+                    <p class="text-lg text-gray-700">
+                        <span class="font-semibold">房间：</span><span id="summaryRoomName"></span><br>
+                        <span class="font-semibold">乐器：</span><span id="summaryInstruments"></span>
+                    </p>
+                </div>
+                
+                <div id="calendar" class="mb-8">
+                    <!-- 日历将通过JavaScript动态生成 -->
+                </div>
+                
+                <div class="text-center mb-6">
+                    <p class="text-lg text-gray-600">选择的日期：<span id="selectedDateDisplay" class="font-semibold text-blue-600">请选择日期</span></p>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button id="backToInstrumentBtn" 
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                        返回
+                    </button>
+                    <button id="toTimeBtn" 
+                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                        下一步
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 时间选择界面 -->
+        <div id="timeSection" class="hidden fade-in">
+            <div class="bg-white rounded-lg card-shadow p-8">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">选择时间段</h2>
+                
+                <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+                    <p class="text-lg text-gray-700">
+                        <span class="font-semibold">房间：</span><span id="timeSummaryRoomName"></span><br>
+                        <span class="font-semibold">乐器：</span><span id="timeSummaryInstruments"></span><br>
+                        <span class="font-semibold">日期：</span><span id="timeSummaryDate"></span>
+                    </p>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-4">可预约时间段 (9:00 - 17:00)</h3>
+                    <div id="timeSlots" class="grid grid-cols-4 gap-3">
+                        <!-- 时间段将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex space-x-6 text-sm">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                            <span>可预约</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                            <span>已预约</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                            <span>已选择</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mb-6">
+                    <p class="text-lg text-gray-600">已选择：<span id="selectedTimeDisplay" class="font-semibold text-blue-600">请选择时间段</span></p>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button id="backToDateBtn" 
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                        返回
+                    </button>
+                    <button id="confirmBookingBtn" 
+                            class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300"
+                            disabled>
+                        确认预约
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 预约成功界面 -->
+        <div id="successSection" class="hidden fade-in">
+            <div class="bg-white rounded-lg card-shadow p-8 text-center">
+                <h2 class="text-3xl font-bold text-green-600 mb-6">预约成功！</h2>
+                
+                <div class="mb-8 p-6 bg-green-50 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4">预约详情</h3>
+                    <div id="bookingDetails" class="text-left space-y-2">
+                        <!-- 预约详情将通过JavaScript填充 -->
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <button id="newBookingBtn" 
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                        继续预约
+                    </button>
+                    <button id="viewBookingsBtn" 
+                            class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                        查看我的预约
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 我的预约界面 -->
+        <div id="myBookingsSection" class="hidden fade-in">
+            <div class="bg-white rounded-lg card-shadow p-8">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">我的预约</h2>
+                
+                <div id="bookingsList" class="space-y-4 mb-8">
+                    <!-- 预约列表将通过JavaScript动态生成 -->
+                </div>
+                
+                <div class="text-center">
+                    <button id="backToMainBtn" 
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                        返回主页
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 应用状态管理
+        const AppState = {
+            currentUser: null,
+            selectedRoom: null,
+            selectedInstruments: [],
+            selectedDate: null,
+            selectedTimeSlots: [],
+            currentSection: 'loginSection'
+        };
+
+        // 房间数据
+        const ROOMS = [
+            {
+                id: 109,
+                name: '109琴房',
+                description: '配备钢琴和电子琴，适合键盘乐器练习。房间宽敞明亮，隔音效果良好。',
+                instruments: ['钢琴', '电子琴'],
+                image: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/d81d0fe5-2a17-413e-beb3-86ceee2121b2.png'
+            },
+            {
+                id: 102,
+                name: '102琴房', 
+                description: '配备吉他和小提琴，适合弦乐器练习。温馨的练习环境，设备齐全。',
+                instruments: ['吉他', '小提琴'],
+                image: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/95563043-b00f-445e-9320-79ad927591c0.png'
+            },
+            {
+                id: 112,
+                name: '112琴房',
+                description: '综合琴房，配备多种乐器，适合各类乐器练习。多功能房间，满足不同需求。',
+                instruments: ['钢琴', '电子琴', '吉他', '小提琴'],
+                image: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/988313be-1dfc-483d-bbef-4859ece527a9.png'
+            }
+        ];
+
+        // 时间段配置
+        const TIME_SLOTS = [];
+        for (let hour = 9; hour < 17; hour++) {
+            TIME_SLOTS.push({
+                hour: hour,
+                display: `${hour}:00-${hour + 1}:00`
+            });
+        }
+
+        // 工具函数
+        const Utils = {
+            // 生成唯一ID
+            generateId: () => Date.now().toString(36) + Math.random().toString(36).substr(2),
+            
+            // 格式化日期
+            formatDate: (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            },
+            
+            // 解析日期
+            parseDate: (dateString) => new Date(dateString),
+            
+            // 显示消息
+            showMessage: (message, type = 'info') => {
+                const alertClass = type === 'error' ? 'bg-red-100 border-red-400 text-red-700' :
+                                  type === 'success' ? 'bg-green-100 border-green-400 text-green-700' :
+                                  'bg-blue-100 border-blue-400 text-blue-700';
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `${alertClass} border px-4 py-3 rounded mb-4`;
+                messageDiv.textContent = message;
+                
+                const container = document.querySelector('.container');
+                container.insertBefore(messageDiv, container.firstChild);
+                
+                setTimeout(() => messageDiv.remove(), 3000);
+            }
+        };
+
+        // 本地存储管理
+        const Storage = {
+            // 获取用户列表
+            getUsers: () => JSON.parse(localStorage.getItem('pianoBooking_users') || '[]'),
+            
+            // 保存用户
+            saveUser: (user) => {
+                const users = Storage.getUsers();
+                users.push(user);
+                localStorage.setItem('pianoBooking_users', JSON.stringify(users));
+            },
+            
+            // 验证用户
+            authenticateUser: (username, password) => {
+                const users = Storage.getUsers();
+                return users.find(u => u.username === username && u.password === password);
+            },
+            
+            // 获取预约列表
+            getBookings: () => JSON.parse(localStorage.getItem('pianoBooking_bookings') || '[]'),
+            
+            // 保存预约
+            saveBooking: (booking) => {
+                const bookings = Storage.getBookings();
+                bookings.push(booking);
+                localStorage.setItem('pianoBooking_bookings', JSON.stringify(bookings));
+            },
+            
+            // 检查时间冲突
+            checkTimeConflict: (roomId, date, timeSlots) => {
+                const bookings = Storage.getBookings();
+                const dateString = Utils.formatDate(date);
+                
+                return bookings.some(booking => 
+                    booking.roomId === roomId && 
+                    booking.date === dateString &&
+                    booking.timeSlots.some(slot => timeSlots.includes(slot))
+                );
+            },
+            
+            // 获取用户预约
+            getUserBookings: (username) => {
+                const bookings = Storage.getBookings();
+                return bookings.filter(booking => booking.username === username);
+            }
+        };
+
+        // UI管理
+        const UI = {
+            // 显示指定区域
+            showSection: (sectionId) => {
+                document.querySelectorAll('[id$="Section"]').forEach(section => {
+                    section.classList.add('hidden');
+                });
+                
+                document.getElementById(sectionId).classList.remove('hidden');
+                AppState.currentSection = sectionId;
+            },
+            
+            // 更新用户信息显示
+            updateUserInfo: () => {
+                const userInfo = document.getElementById('userInfo');
+                const welcomeText = document.getElementById('welcomeText');
+                
+                if (AppState.currentUser) {
+                    welcomeText.textContent = `欢迎，${AppState.currentUser}`;
+                    userInfo.classList.remove('hidden');
+                } else {
+                    userInfo.classList.add('hidden');
+                }
+            },
+            
+            // 渲染房间卡片
+            renderRoomCards: () => {
+                const container = document.getElementById('roomCards');
+                container.innerHTML = '';
+                
+                ROOMS.forEach(room => {
+                    const roomCard = document.createElement('div');
+                    roomCard.className = 'bg-white rounded-lg card-shadow overflow-hidden room-card';
+                    
+                    roomCard.innerHTML = `
+                        <div class="md:flex">
+                            <div class="md:w-1/3">
+                                <img src="${room.image}" alt="${room.description}" class="w-full h-48 md:h-full object-cover">
+                            </div>
+                            <div class="md:w-2/3 p-6">
+                                <h3 class="text-xl font-bold text-gray-800 mb-2">${room.name}</h3>
+                                <p class="text-gray-600 mb-4">${room.description}</p>
+                                <div class="mb-4">
+                                    <h4 class="font-semibold text-gray-700 mb-2">可用乐器：</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${room.instruments.map(instrument => 
+                                            `<span class="bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded">${instrument}</span>`
+                                        ).join('')}
+                                    </div>
+                                </div>
+                                <button onclick="selectRoom(${room.id})" 
+                                        class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition duration-300">
+                                    选择此房间
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(roomCard);
+                });
+            },
+            
+            // 渲染乐器选择
+            renderInstruments: () => {
+                const container = document.getElementById('instrumentsList');
+                const roomNameElement = document.getElementById('selectedRoomName');
+                
+                const room = ROOMS.find(r => r.id === AppState.selectedRoom);
+                roomNameElement.textContent = room.name;
+                
+                container.innerHTML = '';
+                room.instruments.forEach(instrument => {
+                    const instrumentDiv = document.createElement('div');
+                    instrumentDiv.className = 'flex items-center';
+                    
+                    instrumentDiv.innerHTML = `
+                        <input type="checkbox" id="instrument_${instrument}" 
+                               class="instrument-checkbox hidden" value="${instrument}">
+                        <label for="instrument_${instrument}" 
+                               class="w-full p-3 border-2 border-gray-300 rounded-lg cursor-pointer text-center hover:bg-blue-50 transition duration-300">
+                            ${instrument}
+                        </label>
+                    `;
+                    
+                    container.appendChild(instrumentDiv);
+                });
+                
+                // 添加复选框事件监听
+                container.querySelectorAll('.instrument-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', updateSelectedInstruments);
+                });
+            },
+            
+            // 渲染日历
+            renderCalendar: () => {
+                const container = document.getElementById('calendar');
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+                
+                // 创建日历标题
+                const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月',
+                                  '七月', '八月', '九月', '十月', '十一月', '十二月'];
+                
+                // 计算本月第一天是星期几
+                const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+                const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                
+                let calendarHTML = `
+                    <div class="bg-white rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-center mb-4">${currentYear}年 ${monthNames[currentMonth]}</h3>
+                        <div class="grid grid-cols-7 gap-1 mb-2">
+                            <div class="text-center font-semibold text-gray-600 py-2">日</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">一</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">二</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">三</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">四</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">五</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">六</div>
+                        </div>
+                        <div class="grid grid-cols-7 gap-1">
+                `;
+                
+                // 添加空白单元格
+                for (let i = 0; i < firstDay; i++) {
+                    calendarHTML += '<div class="py-2"></div>';
+                }
+                
+                // 添加日期单元格
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(currentYear, currentMonth, day);
+                    const dateString = Utils.formatDate(date);
+                    const isPast = date < now.setHours(0, 0, 0, 0);
+                    const isToday = date.toDateString() === new Date().toDateString();
+                    
+                    let cellClass = 'calendar-cell py-2 text-center rounded hover:bg-blue-100';
+                    if (isPast) {
+                        cellClass += ' disabled';
+                    }
+                    if (isToday) {
+                        cellClass += ' bg-blue-50 font-semibold';
+                    }
+                    
+                    calendarHTML += `
+                        <div class="${cellClass}" 
+                             ${!isPast ? `onclick="selectDate('${dateString}')"` : ''}
+                             data-date="${dateString}">
+                            ${day}
+                        </div>
+                    `;
+                }
+                
+                calendarHTML += '</div></div>';
+                container.innerHTML = calendarHTML;
+            },
+            
+            // 渲染时间段
+            renderTimeSlots: () => {
+                const container = document.getElementById('timeSlots');
+                const bookings = Storage.getBookings();
+                const dateString = Utils.formatDate(AppState.selectedDate);
+                
+                container.innerHTML = '';
+                
+                TIME_SLOTS.forEach(timeSlot => {
+                    const isOccupied = bookings.some(booking => 
+                        booking.roomId === AppState.selectedRoom &&
+                        booking.date === dateString &&
+                        booking.timeSlots.includes(timeSlot.hour)
+                    );
+                    
+                    const slotDiv = document.createElement('div');
+                    slotDiv.className = `time-slot p-3 rounded-lg text-center font-medium cursor-pointer ${
+                        isOccupied ? 'occupied' : 'available'
+                    }`;
+                    slotDiv.textContent = timeSlot.display;
+                    slotDiv.dataset.hour = timeSlot.hour;
+                    
+                    if (!isOccupied) {
+                        slotDiv.addEventListener('click', () => toggleTimeSlot(timeSlot.hour));
+                    }
+                    
+                    container.appendChild(slotDiv);
+                });
+            },
+            
+            // 更新预约摘要
+            updateBookingSummary: () => {
+                const room = ROOMS.find(r => r.id === AppState.selectedRoom);
+                
+                // 更新日期选择页面的摘要
+                document.getElementById('summaryRoomName').textContent = room.name;
+                document.getElementById('summaryInstruments').textContent = AppState.selectedInstruments.join('、');
+                
+                // 更新时间选择页面的摘要
+                document.getElementById('timeSummaryRoomName').textContent = room.name;
+                document.getElementById('timeSummaryInstruments').textContent = AppState.selectedInstruments.join('、');
+                
+                if (AppState.selectedDate) {
+                    const dateString = AppState.selectedDate.toLocaleDateString('zh-CN');
+                    document.getElementById('timeSummaryDate').textContent = dateString;
+                }
+            },
+            
+            // 渲染我的预约
+            renderMyBookings: () => {
+                const container = document.getElementById('bookingsList');
+                const userBookings = Storage.getUserBookings(AppState.currentUser);
+                
+                if (userBookings.length === 0) {
+                    container.innerHTML = '<p class="text-center text-gray-500 text-lg">暂无预约记录</p>';
+                    return;
+                }
+                
+                container.innerHTML = '';
+                userBookings.forEach(booking => {
+                    const room = ROOMS.find(r => r.id === booking.roomId);
+                    const bookingDiv = document.createElement('div');
+                    bookingDiv.className = 'bg-gray-50 rounded-lg p-4 border';
+                    
+                    const timeSlotText = booking.timeSlots.map(hour => `${hour}:00-${hour+1}:00`).join('、');
+                    
+                    bookingDiv.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-semibold text-lg">${room.name}</h4>
+                                <p class="text-gray-600">日期：${booking.date}</p>
+                                <p class="text-gray-600">时间：${timeSlotText}</p>
+                                <p class="text-gray-600">乐器：${booking.instruments.join('、')}</p>
+                                <p class="text-gray-500 text-sm">预约时间：${new Date(booking.createTime).toLocaleString()}</p>
+                            </div>
+                            <span class="bg-green-100 text-green-800 text-sm font-medium px-2 py-1 rounded">
+                                已确认
+                            </span>
+                        </div>
+                    `;
+                    
+                    container.appendChild(bookingDiv);
+                });
+            }
+        };
+
+        // 事件处理函数
+        function selectRoom(roomId) {
+            AppState.selectedRoom = roomId;
+            UI.renderInstruments();
+            UI.showSection('instrumentSection');
+        }
+
+        function updateSelectedInstruments() {
+            const checkboxes = document.querySelectorAll('.instrument-checkbox:checked');
+            AppState.selectedInstruments = Array.from(checkboxes).map(cb => cb.value);
+            
+            const toDateBtn = document.getElementById('toDateBtn');
+            toDateBtn.disabled = AppState.selectedInstruments.length === 0;
+        }
+
+        function selectDate(dateString) {
+            // 清除之前的选择
+            document.querySelectorAll('.calendar-cell').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+            
+            // 标记新选择的日期
+            const selectedCell = document.querySelector(`[data-date="${dateString}"]`);
+            if (selectedCell) {
+                selectedCell.classList.add('selected');
+            }
+            
+            AppState.selectedDate = Utils.parseDate(dateString);
+            document.getElementById('selectedDateDisplay').textContent = 
+                AppState.selectedDate.toLocaleDateString('zh-CN');
+            
+            const toTimeBtn = document.getElementById('toTimeBtn');
+            toTimeBtn.disabled = false;
+        }
+
+        function toggleTimeSlot(hour) {
+            const slotDiv = document.querySelector(`[data-hour="${hour}"]`);
+            
+            if (AppState.selectedTimeSlots.includes(hour)) {
+                // 取消选择
+                AppState.selectedTimeSlots = AppState.selectedTimeSlots.filter(h => h !== hour);
+                slotDiv.classList.remove('selected');
+                slotDiv.classList.add('available');
+            } else {
+                // 选择
+                AppState.selectedTimeSlots.push(hour);
+                slotDiv.classList.remove('available');
+                slotDiv.classList.add('selected');
+            }
+            
+            AppState.selectedTimeSlots.sort();
+            updateSelectedTimeDisplay();
+        }
+
+        function updateSelectedTimeDisplay() {
+            const display = document.getElementById('selectedTimeDisplay');
+            const confirmBtn = document.getElementById('confirmBookingBtn');
+            
+            if (AppState.selectedTimeSlots.length === 0) {
+                display.textContent = '请选择时间段';
+                confirmBtn.disabled = true;
+            } else {
+                const timeText = AppState.selectedTimeSlots.map(hour => `${hour}:00-${hour+1}:00`).join('、');
+                display.textContent = `${timeText} (共${AppState.selectedTimeSlots.length}小时)`;
+                confirmBtn.disabled = false;
+            }
+        }
+
+        function confirmBooking() {
+            // 检查时间冲突
+            if (Storage.checkTimeConflict(AppState.selectedRoom, AppState.selectedDate, AppState.selectedTimeSlots)) {
+                Utils.showMessage('选择的时间段与现有预约冲突，请重新选择', 'error');
+                return;
+            }
+            
+            // 创建预约记录
+            const booking = {
+                id: Utils.generateId(),
+                username: AppState.currentUser,
+                roomId: AppState.selectedRoom,
+                instruments: [...AppState.selectedInstruments],
+                date: Utils.formatDate(AppState.selectedDate),
+                timeSlots: [...AppState.selectedTimeSlots],
+                createTime: new Date().toISOString()
+            };
+            
+            // 保存预约
+            Storage.saveBooking(booking);
+            
+            // 显示预约详情
+            const room = ROOMS.find(r => r.id === AppState.selectedRoom);
+            const timeSlotText = AppState.selectedTimeSlots.map(hour => `${hour}:00-${hour+1}:00`).join('、');
+            
+            document.getElementById('bookingDetails').innerHTML = `
+                <p><span class="font-semibold">预约号：</span>${booking.id}</p>
+                <p><span class="font-semibold">房间：</span>${room.name}</p>
+                <p><span class="font-semibold">日期：</span>${AppState.selectedDate.toLocaleDateString('zh-CN')}</p>
+                <p><span class="font-semibold">时间：</span>${timeSlotText}</p>
+                <p><span class="font-semibold">乐器：</span>${AppState.selectedInstruments.join('、')}</p>
+            `;
+            
+            UI.showSection('successSection');
+            
+            // 重置状态
+            AppState.selectedRoom = null;
+            AppState.selectedInstruments = [];
+            AppState.selectedDate = null;
+            AppState.selectedTimeSlots = [];
+        }
+
+        // 初始化事件监听
+        function initializeEventListeners() {
+            // 登录表单
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                
+                if (!username || !password) {
+                    Utils.showMessage('请输入用户名和密码', 'error');
+                    return;
+                }
+                
+                const user = Storage.authenticateUser(username, password);
+                if (user) {
+                    AppState.currentUser = username;
+                    UI.updateUserInfo();
+                    UI.renderRoomCards();
+                    UI.showSection('roomSection');
+                    Utils.showMessage('登录成功', 'success');
+                } else {
+                    Utils.showMessage('用户名或密码错误', 'error');
+                }
+            });
+            
+            // 注册相关
+            document.getElementById('registerBtn').addEventListener('click', () => {
+                UI.showSection('registerSection');
+            });
+            
+            document.getElementById('backToLoginBtn').addEventListener('click', () => {
+                UI.showSection('loginSection');
+            });
+            
+            document.getElementById('registerForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('regUsername').value.trim();
+                const password = document.getElementById('regPassword').value;
+                const confirmPassword = document.getElementById('regPasswordConfirm').value;
+                
+                if (!username || !password || !confirmPassword) {
+                    Utils.showMessage('请填写所有字段', 'error');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    Utils.showMessage('两次输入的密码不一致', 'error');
+                    return;
+                }
+                
+                const users = Storage.getUsers();
+                if (users.find(u => u.username === username)) {
+                    Utils.showMessage('用户名已存在', 'error');
+                    return;
+                }
+                
+                Storage.saveUser({ username, password, createTime: new Date().toISOString() });
+                Utils.showMessage('注册成功，请登录', 'success');
+                
+                // 清空表单并返回登录页面
+                this.reset();
+                document.getElementById('username').value = username;
+                UI.showSection('loginSection');
+            });
+            
+            // 导航按钮
+            document.getElementById('backToRoomBtn').addEventListener('click', () => {
+                UI.showSection('roomSection');
+            });
+            
+            document.getElementById('toDateBtn').addEventListener('click', () => {
+                if (AppState.selectedInstruments.length === 0) {
+                    Utils.showMessage('请至少选择一种乐器', 'error');
+                    return;
+                }
+                UI.updateBookingSummary();
+                UI.renderCalendar();
+                UI.showSection('dateSection');
+            });
+            
+            document.getElementById('backToInstrumentBtn').addEventListener('click', () => {
+                UI.showSection('instrumentSection');
+            });
+            
+            document.getElementById('toTimeBtn').addEventListener('click', () => {
+                if (!AppState.selectedDate) {
+                    Utils.showMessage('请选择日期', 'error');
+                    return;
+                }
+                UI.updateBookingSummary();
+                UI.renderTimeSlots();
+                UI.showSection('timeSection');
+            });
+            
+            document.getElementById('backToDateBtn').addEventListener('click', () => {
+                // 重置时间段选择
+                AppState.selectedTimeSlots = [];
+                UI.showSection('dateSection');
+            });
+            
+            document.getElementById('confirmBookingBtn').addEventListener('click', confirmBooking);
+            
+            // 预约成功页面按钮
+            document.getElementById('newBookingBtn').addEventListener('click', () => {
+                UI.renderRoomCards();
+                UI.showSection('roomSection');
+            });
+            
+            document.getElementById('viewBookingsBtn').addEventListener('click', () => {
+                UI.renderMyBookings();
+                UI.showSection('myBookingsSection');
+            });
+            
+            document.getElementById('backToMainBtn').addEventListener('click', () => {
+                UI.renderRoomCards();
+                UI.showSection('roomSection');
+            });
+            
+            // 退出登录
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                AppState.currentUser = null;
+                AppState.selectedRoom = null;
+                AppState.selectedInstruments = [];
+                AppState.selectedDate = null;
+                AppState.selectedTimeSlots = [];
+                
+                UI.updateUserInfo();
+                UI.showSection('loginSection');
+                
+                // 清空登录表单
+                document.getElementById('loginForm').reset();
+                Utils.showMessage('已退出登录', 'success');
+            });
+        }
+
+        // 应用初始化
+        function initializeApp() {
+            initializeEventListeners();
+            UI.showSection('loginSection');
+            
+            // 添加一些示例用户（仅用于演示）
+            const users = Storage.getUsers();
+            if (users.length === 0) {
+                Storage.saveUser({ username: 'admin', password: 'admin123', createTime: new Date().toISOString() });
+                Storage.saveUser({ username: 'student', password: '123456', createTime: new Date().toISOString() });
+                console.log('已创建示例用户：admin/admin123, student/123456');
+            }
+        }
+
+        // 页面加载完成后初始化应用
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
+
