@@ -53,6 +53,7 @@ CREATE TABLE booking (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     CONSTRAINT fk_book_user FOREIGN KEY (user_id) REFERENCES sys_user(id),
     CONSTRAINT fk_book_room FOREIGN KEY (room_id) REFERENCES room(id),
+    CONSTRAINT uk_book_slot UNIQUE (room_id, book_date, start_min) COMMENT '并发兜底，同房同日同起点唯一',
     INDEX idx_book_room_date (room_id, book_date)
 ) COMMENT='预约表';
 
@@ -66,7 +67,8 @@ CREATE TABLE watch (
     status VARCHAR(10) DEFAULT 'active' COMMENT '状态，active 或 notified',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     CONSTRAINT fk_watch_user FOREIGN KEY (user_id) REFERENCES sys_user(id),
-    CONSTRAINT fk_watch_room FOREIGN KEY (room_id) REFERENCES room(id)
+    CONSTRAINT fk_watch_room FOREIGN KEY (room_id) REFERENCES room(id),
+    CONSTRAINT uk_watch_slot UNIQUE (user_id, room_id, book_date, start_min) COMMENT '同一用户对同一时段只关注一次'
 ) COMMENT='空出提醒关注表';
 
 CREATE TABLE credit_log (
