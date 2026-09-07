@@ -3,6 +3,7 @@ package com.roomreservation.service.impl;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.roomreservation.common.Constants;
 import com.roomreservation.entity.SysUser;
@@ -82,9 +83,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         if (!BCrypt.checkpw(oldPassword, user.getPassword())) {
             throw new ServiceException(Constants.CODE_400, "旧密码错误");
         }
-        SysUser target = new SysUser();
-        target.setId(userId);
-        target.setPassword(BCrypt.hashpw(newPassword));
-        updateById(target);
+        update(new LambdaUpdateWrapper<SysUser>()
+                .eq(SysUser::getId, userId)
+                .set(SysUser::getPassword, BCrypt.hashpw(newPassword)));
     }
 }
