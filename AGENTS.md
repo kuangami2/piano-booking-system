@@ -1,12 +1,13 @@
 # AGENTS.md，供协作 agent 进仓阅读
 
 ## 项目
-琴房预约系统，三人协作，需求定稿 v1 见 docs/需求说明.md，设计见 docs/架构说明.md，接口契约见 docs/接口清单.md。
+琴房预约系统，三人协作，需求定稿 v1 见 docs/需求说明.md，设计见 docs/架构说明.md，接口契约见 docs/接口清单.md v0.2 冻结，任务分配见 docs/任务分配.md。
 
 ## 目录与负责人
 - docs：共享开发文档，组长维护。
 - backend：后端，Spring Boot 3.5，包 com.roomreservation；林义洋负责预约核心、冲突检测、空出提醒、信用与规则。
-- frontend：前端，待搭建；刘善宁用户端、孙业腾管理端。
+- frontend：frontend/user-web 用户端 5173，刘善宁；frontend/admin-web 管理端 5174，孙业腾。
+- tools：验收与自测脚本。
 
 ## 分支约定
 Git Flow：feature 分支开发，并入 develop 集成，验证后合并 master 发布。实际主干 master。
@@ -17,4 +18,10 @@ Git Flow：feature 分支开发，并入 develop 集成，验证后合并 master
 
 ## 构建命令
 后端 backend：先执行 backend/sql/room_reservation.sql 建库，数据源配置见 src/main/resources/application.yaml，默认 127.0.0.1:3306/room_reservation、root、root，服务端口 9090；运行 RoomReservationApplication 或 mvn spring-boot:run，空库首启自动补种子数据，种子账号 admin/admin123、demo/123456。
-前端 frontend：待搭建后补充。
+前端：frontend/user-web 与 frontend/admin-web，各自 npm install 后 npm run dev，/api 代理到 9090。
+
+## 集成与验收流程
+1. 每日集成：组长 fetch 检查组员 feature 分支，冲突先沟通再合并；合入 master 前在 develop 集成跑通。
+2. 管理端接口加 @RequireRole("admin")，全部按 docs/接口清单.md 实现。
+3. 契约变更先更新 docs/接口清单.md 再实现，不得静默改接口。
+4. 验收演示脚本 tools/demo_test.ps1 在 Windows PowerShell 运行，场景见 docs/验收演示清单.md。
