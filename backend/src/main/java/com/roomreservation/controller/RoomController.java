@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -124,6 +125,12 @@ public class RoomController {
         int minUnit = ruleConfigService.getInt(RuleKeys.BOOKING_MIN_UNIT, 30);
         int openStart = room.getOpenStart();
         int openEnd = room.getOpenEnd();
+        // 当天只展示当前时刻之后的时段，过期与进行中时段不可约
+        if (day.equals(today)) {
+            int nowMin = LocalTime.now().getHour() * 60 + LocalTime.now().getMinute();
+            int nextSlot = ((nowMin + minUnit - 1) / minUnit) * minUnit;
+            openStart = Math.max(openStart, nextSlot);
+        }
         int totalSlots = (openEnd - openStart) / minUnit;
         if (totalSlots <= 0) {
             return Result.success(slots);

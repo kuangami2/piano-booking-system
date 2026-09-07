@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
@@ -99,6 +100,14 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
         }
         if (startMin % minUnit != 0 || endMin % minUnit != 0) {
             throw new ServiceException(Constants.CODE_400, "预约时间需按 " + minUnit + " 分钟对齐");
+        }
+        // 当天只能预约当前时刻之后的时段
+        if (bookDate.equals(today)) {
+            int nowMin = LocalTime.now().getHour() * 60 + LocalTime.now().getMinute();
+            int nextSlot = ((nowMin + minUnit - 1) / minUnit) * minUnit;
+            if (startMin < nextSlot) {
+                throw new ServiceException(Constants.CODE_400, "当天只能预约当前时刻之后的时段");
+            }
         }
         if (endMin - startMin > maxDuration) {
             throw new ServiceException(Constants.CODE_400, "单次预约最长 " + maxDuration / 60 + " 小时");

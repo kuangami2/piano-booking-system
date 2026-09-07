@@ -17,7 +17,7 @@ import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { forgotPassword, login, register, resetPassword } from '../api/auth'
 
-const router = useRouter(); const route = useRoute(); const tab = ref('login'); const loading = ref(false); const dialog = ref('forgot')
+const router = useRouter(); const route = useRoute(); const tab = ref('login'); const loading = ref(false); const dialog = ref('')
 const loginForm = ref(); const registerForm = ref()
 const loginData = reactive({ username: '', password: '' }); const registerData = reactive({ username: '', password: '', name: '', studentNo: '', email: '' })
 const forgotData = reactive({ email: '' }); const resetData = reactive({ token: '', newPassword: '' })

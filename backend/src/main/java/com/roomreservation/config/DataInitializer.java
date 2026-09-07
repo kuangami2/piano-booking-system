@@ -158,12 +158,15 @@ public class DataInitializer implements ApplicationRunner {
             noticeMapper.insert(notice);
         }
         if (bannerMapper.selectCount(null) == 0) {
-            Banner banner = new Banner();
-            banner.setImage("/img/banner-default.png");
-            banner.setLink("");
-            banner.setSort(1);
-            banner.setStatus("normal");
-            bannerMapper.insert(banner);
+            String[] images = {"/img/banner1.png", "/img/banner2.png", "/img/banner3.jpg"};
+            for (int i = 0; i < images.length; i++) {
+                Banner banner = new Banner();
+                banner.setImage(images[i]);
+                banner.setLink("");
+                banner.setSort(i + 1);
+                banner.setStatus("normal");
+                bannerMapper.insert(banner);
+            }
         }
     }
 }
