@@ -58,6 +58,10 @@ $t1 = $login2.data.token
 Check 'login with new password' (-not [string]::IsNullOrEmpty($t1))
 Call-Api -Method Put -Path '/api/auth/password' -Body @{password = 'new123'; newPassword = $pwd} -Token $t1 | Out-Null
 Check 'change password back' $true
+# 密码改回后需重新登录刷新 token，旧密码签发的 token 已失效
+$login3 = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u1; password = $pwd}
+$t1 = $login3.data.token
+Check 'relogin after revert' (-not [string]::IsNullOrEmpty($t1))
 
 Write-Host '== Scene 2: room browse, search, inner/outer =='
 $rooms = Call-Api -Method Get -Path '/api/rooms' -Token $t1
