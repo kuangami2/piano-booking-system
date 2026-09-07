@@ -45,6 +45,9 @@ Call-Api -Method Post -Path '/api/auth/register' -Body @{username = $u1; passwor
 Check 'register u1' $true
 Call-Api -Method Post -Path '/api/auth/register' -Body @{username = $u2; password = $upwd; name = 'User Two'; studentNo = 'T2' + $stamp; email = ($u2 + '@t.local')} | Out-Null
 Check 'register u2' $true
+$loginU2 = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u2; password = $upwd}
+$t2 = $loginU2.data.token
+Check 'login u2 returns token' (-not [string]::IsNullOrEmpty($t2))
 $rejected = Expect-Rejected -Method Post -Path '/api/auth/register' -Body @{username = $u1; password = $upwd; name = 'Dup'; studentNo = 'X9'; email = 'x@t.local'}
 Check 'duplicate username rejected' ($rejected -eq 1)
 
