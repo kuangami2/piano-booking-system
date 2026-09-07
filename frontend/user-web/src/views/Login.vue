@@ -1,0 +1,35 @@
+<template>
+  <div class="login-page">
+    <div class="login-intro"><div class="intro-mark">♫</div><h1>琴房预约</h1><p>让每一次练习，都有合适的空间。</p><div class="intro-note">便捷浏览 · 灵活预约 · 空出提醒</div></div>
+    <el-card class="login-card soft-card">
+      <el-tabs v-model="tab">
+        <el-tab-pane label="登录" name="login"><el-form ref="loginForm" :model="loginData" :rules="loginRules" label-position="top" @submit.prevent="submitLogin"><el-form-item label="账号" prop="username"><el-input v-model="loginData.username" placeholder="请输入登录名" /></el-form-item><el-form-item label="密码" prop="password"><el-input v-model="loginData.password" type="password" show-password placeholder="请输入密码" @keyup.enter="submitLogin" /></el-form-item><el-button type="primary" class="full-btn" :loading="loading" @click="submitLogin">登录</el-button></el-form></el-tab-pane>
+        <el-tab-pane label="注册" name="register"><el-form ref="registerForm" :model="registerData" :rules="registerRules" label-position="top"><el-form-item label="登录名" prop="username"><el-input v-model="registerData.username" /></el-form-item><el-form-item label="密码" prop="password"><el-input v-model="registerData.password" type="password" show-password /></el-form-item><el-form-item label="姓名" prop="name"><el-input v-model="registerData.name" /></el-form-item><el-form-item label="学号" prop="studentNo"><el-input v-model="registerData.studentNo" /></el-form-item><el-form-item label="邮箱" prop="email"><el-input v-model="registerData.email" /></el-form-item><el-button type="primary" class="full-btn" :loading="loading" @click="submitRegister">创建账号</el-button></el-form></el-tab-pane>
+      </el-tabs>
+      <div class="login-links"><el-button link type="primary" @click="dialog = 'forgot'">忘记密码？</el-button><el-button link type="info" @click="dialog = 'reset'">已有重置令牌</el-button></div>
+    </el-card>
+    <el-dialog v-model="dialogVisible" :title="dialog === 'forgot' ? '找回密码' : '重置密码'" width="420px"><el-form v-if="dialog === 'forgot'" :model="forgotData"><el-form-item label="邮箱"><el-input v-model="forgotData.email" placeholder="注册时使用的邮箱" /></el-form-item><el-button type="primary" @click="submitForgot">提交申请</el-button></el-form><el-form v-else :model="resetData"><el-form-item label="重置令牌"><el-input v-model="resetData.token" /></el-form-item><el-form-item label="新密码"><el-input v-model="resetData.newPassword" type="password" /></el-form-item><el-button type="primary" @click="submitReset">提交重置</el-button></el-form></el-dialog>
+  </div>
+</template>
+<script setup>
+import { computed, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
+import { forgotPassword, login, register, resetPassword } from '../api/auth'
+
+const router = useRouter(); const route = useRoute(); const tab = ref('login'); const loading = ref(false); const dialog = ref('forgot')
+const loginForm = ref(); const registerForm = ref()
+const loginData = reactive({ username: '', password: '' }); const registerData = reactive({ username: '', password: '', name: '', studentNo: '', email: '' })
+const forgotData = reactive({ email: '' }); const resetData = reactive({ token: '', newPassword: '' })
+const required = (label) => ({ required: true, message: `请输入${label}`, trigger: 'blur' })
+const loginRules = { username: required('账号'), password: required('密码') }
+const registerRules = { username: required('登录名'), password: [{ required: true, message: '密码至少 6 位', min: 6, trigger: 'blur' }], name: required('姓名'), studentNo: required('学号'), email: [{ required: true, message: '请输入邮箱', type: 'email', trigger: 'blur' }] }
+const dialogVisible = computed({ get: () => !!dialog.value, set: (value) => { if (!value) dialog.value = '' } })
+async function submitLogin() { if (!(await loginForm.value?.validate().catch(() => false))) return; loading.value = true; try { const data = await login(loginData); localStorage.setItem('token', data.token); localStorage.setItem('user', JSON.stringify(data.user)); ElMessage.success('登录成功'); router.replace(route.query.redirect || '/home') } catch (e) { ElMessage.error(e.message) } finally { loading.value = false } }
+async function submitRegister() { if (!(await registerForm.value?.validate().catch(() => false))) return; loading.value = true; try { await register(registerData); ElMessage.success('注册成功，请登录'); tab.value = 'login'; loginData.username = registerData.username } catch (e) { ElMessage.error(e.message) } finally { loading.value = false } }
+async function submitForgot() { if (!forgotData.email) return ElMessage.warning('请输入邮箱'); try { await forgotPassword(forgotData) } catch (e) { ElMessage.info(e.message || '邮件通道未接入，请联系管理员') } }
+async function submitReset() { try { await resetPassword({ token: resetData.token, newPassword: resetData.newPassword }) } catch (e) { ElMessage.info(e.message || '重置通道未接入，请联系管理员') } }
+</script>
+<style scoped>
+.login-page { min-height: 100vh; display: grid; grid-template-columns: minmax(300px, 420px) 420px; align-items: center; justify-content: center; gap: clamp(40px, 8vw, 120px); padding: 32px; }.login-intro { color: #116f68; }.intro-mark { display: grid; place-items: center; width: 68px; height: 68px; color: #fff; background: #168f83; border-radius: 20px; font-size: 40px; box-shadow: 0 12px 30px #168f8340; }.login-intro h1 { margin: 20px 0 8px; font-size: 42px; }.login-intro p { margin: 0; color: #56716f; font-size: 18px; }.intro-note { margin-top: 58px; color: #71908d; font-size: 14px; letter-spacing: .12em; }.login-card { padding: 18px 24px 12px; }.full-btn { width: 100%; height: 42px; }.login-links { margin-top: 14px; text-align: right; }@media(max-width: 760px){.login-page{display:block;padding:36px 18px}.login-intro{text-align:center;margin:12px 0 32px}.intro-mark{margin:auto}.login-intro h1{font-size:32px}.intro-note{margin-top:18px}.login-card{max-width:440px;margin:auto}}
+</style>
