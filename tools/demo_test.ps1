@@ -35,31 +35,31 @@ function Check {
 }
 
 $stamp = Get-Date -Format 'HHmmss'
-$pwd = 'pass123'
+$upwd = 'pass123'
 $u1 = 'u1' + $stamp
 $u2 = 'u2' + $stamp
 $tomorrow = (Get-Date).AddDays(1).ToString('yyyy-MM-dd')
 
 Write-Host '== Scene 1: register, login, change password =='
-Call-Api -Method Post -Path '/api/auth/register' -Body @{username = $u1; password = $pwd; name = 'User One'; studentNo = 'T1' + $stamp; email = ($u1 + '@t.local')} | Out-Null
+Call-Api -Method Post -Path '/api/auth/register' -Body @{username = $u1; password = $upwd; name = 'User One'; studentNo = 'T1' + $stamp; email = ($u1 + '@t.local')} | Out-Null
 Check 'register u1' $true
-Call-Api -Method Post -Path '/api/auth/register' -Body @{username = $u2; password = $pwd; name = 'User Two'; studentNo = 'T2' + $stamp; email = ($u2 + '@t.local')} | Out-Null
+Call-Api -Method Post -Path '/api/auth/register' -Body @{username = $u2; password = $upwd; name = 'User Two'; studentNo = 'T2' + $stamp; email = ($u2 + '@t.local')} | Out-Null
 Check 'register u2' $true
-$rejected = Expect-Rejected -Method Post -Path '/api/auth/register' -Body @{username = $u1; password = $pwd; name = 'Dup'; studentNo = 'X9'; email = 'x@t.local'}
+$rejected = Expect-Rejected -Method Post -Path '/api/auth/register' -Body @{username = $u1; password = $upwd; name = 'Dup'; studentNo = 'X9'; email = 'x@t.local'}
 Check 'duplicate username rejected' ($rejected -eq 1)
 
-$login = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u1; password = $pwd}
+$login = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u1; password = $upwd}
 $t1 = $login.data.token
 Check 'login u1 returns token' (-not [string]::IsNullOrEmpty($t1))
 
-Call-Api -Method Put -Path '/api/auth/password' -Body @{password = $pwd; newPassword = 'new123'} -Token $t1 | Out-Null
+Call-Api -Method Put -Path '/api/auth/password' -Body @{password = $upwd; newPassword = 'new123'} -Token $t1 | Out-Null
 $login2 = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u1; password = 'new123'}
 $t1 = $login2.data.token
 Check 'login with new password' (-not [string]::IsNullOrEmpty($t1))
-Call-Api -Method Put -Path '/api/auth/password' -Body @{password = 'new123'; newPassword = $pwd} -Token $t1 | Out-Null
+Call-Api -Method Put -Path '/api/auth/password' -Body @{password = 'new123'; newPassword = $upwd} -Token $t1 | Out-Null
 Check 'change password back' $true
-# 密码改回后需重新登录刷新 token，旧密码签发的 token 已失效
-$login3 = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u1; password = $pwd}
+$login3 = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u1; password = $upwd}
+if (-not $login3.data -or [string]::IsNullOrEmpty($login3.data.token)) { Write-Host ('DEBUG login3 code=' + $login3.code + ' dataNull=' + ($null -eq $login3.data)) }
 $t1 = $login3.data.token
 Check 'relogin after revert' (-not [string]::IsNullOrEmpty($t1))
 
