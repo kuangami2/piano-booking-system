@@ -1,6 +1,7 @@
 package com.roomreservation.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.roomreservation.common.Constants;
 import com.roomreservation.common.RuleKeys;
@@ -154,7 +155,7 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
         if (cancelCount >= cancelLimit) {
             throw new ServiceException(Constants.CODE_409, "本周退约已达 " + cancelLimit + " 次上限");
         }
-        bookingMapper.update(null, new LambdaQueryWrapper<Booking>()
+        bookingMapper.update(null, new LambdaUpdateWrapper<Booking>()
                 .eq(Booking::getId, bookingId)
                 .set(Booking::getStatus, "cancelled"));
         notifyWatchers(booking);
@@ -186,7 +187,7 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
             msg.setContent(content);
             msg.setIsRead(false);
             messageMapper.insert(msg);
-            watchMapper.update(null, new LambdaQueryWrapper<Watch>()
+            watchMapper.update(null, new LambdaUpdateWrapper<Watch>()
                     .eq(Watch::getId, w.getId())
                     .set(Watch::getStatus, "notified"));
         }

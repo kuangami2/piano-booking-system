@@ -1,6 +1,7 @@
 package com.roomreservation.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.roomreservation.common.Constants;
 import com.roomreservation.common.Result;
@@ -58,7 +59,7 @@ public class MessageController {
         if (!message.getUserId().equals(user.getId())) {
             throw new ServiceException(Constants.CODE_403, "只能操作自己的消息");
         }
-        messageMapper.update(null, new LambdaQueryWrapper<Message>()
+        messageMapper.update(null, new LambdaUpdateWrapper<Message>()
                 .eq(Message::getId, id)
                 .set(Message::getIsRead, true));
         return Result.success();
