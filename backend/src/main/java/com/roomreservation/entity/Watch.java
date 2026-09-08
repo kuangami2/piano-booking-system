@@ -2,6 +2,7 @@ package com.roomreservation.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -35,4 +36,7 @@ public class Watch {
     /** 创建时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
+    /** 非表字段，列表展示用琴房名称 */
+    @TableField(exist = false)
+    private String roomName;
 }

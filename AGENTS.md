@@ -25,3 +25,6 @@ Git Flow：feature 分支开发，并入 develop 集成，验证后合并 master
 2. 管理端接口加 @RequireRole("admin")，全部按 docs/接口清单.md 实现。
 3. 契约变更先更新 docs/接口清单.md 再实现，不得静默改接口。
 4. 验收演示脚本 tools/demo_test.ps1 在 Windows PowerShell 运行，场景见 docs/验收演示清单.md。
+5. develop 同步：组长在 master 集成验证后推送 origin/develop，组员以 develop 为集成基线。
+6. 接口冻结：新接口先评审并写入 docs/接口清单.md 标注冻结版本，未冻结不得实现。
+7. v1.1 增强走 feature/v1.1-enhance，功能开关控制，依赖不可用时 v1 主链路必须可运行。

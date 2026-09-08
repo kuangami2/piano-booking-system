@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.roomreservation.common.Constants;
 import com.roomreservation.common.Result;
+import com.roomreservation.entity.Room;
 import com.roomreservation.entity.SysUser;
 import com.roomreservation.entity.Watch;
 import com.roomreservation.exception.ServiceException;
+import com.roomreservation.mapper.RoomMapper;
 import com.roomreservation.mapper.WatchMapper;
 import com.roomreservation.service.IWatchService;
 import com.roomreservation.utils.TokenUtils;
@@ -22,7 +24,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 空出提醒关注接口
@@ -35,6 +39,8 @@ public class WatchController {
     private IWatchService watchService;
     @Resource
     private WatchMapper watchMapper;
+    @Resource
+    private RoomMapper roomMapper;
 
     @PostMapping
     public Result add(@RequestBody Watch watch) {
@@ -56,6 +62,7 @@ public class WatchController {
         }
         wrapper.orderByDesc(Watch::getBookDate).orderByDesc(Watch::getStartMin);
         Page<Watch> result = watchMapper.selectPage(new Page<>(page, size), wrapper);
+        fillRoomName(result.getRecords());
         Map<String, Object> data = new HashMap<>();
         data.put("list", result.getRecords());
         data.put("total", result.getTotal());
@@ -74,5 +81,15 @@ public class WatchController {
         }
         watchMapper.deleteById(id);
         return Result.success();
+    }
+
+    private void fillRoomName(List<Watch> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        List<Integer> roomIds = records.stream().map(Watch::getRoomId).distinct().collect(Collectors.toList());
+        Map<Integer, String> names = roomMapper.selectBatchIds(roomIds).stream()
+                .collect(Collectors.toMap(Room::getId, Room::getName));
+        records.forEach(w -> w.setRoomName(names.get(w.getRoomId())));
     }
 }

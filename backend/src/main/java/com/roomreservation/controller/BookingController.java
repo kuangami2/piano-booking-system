@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.roomreservation.common.Result;
 import com.roomreservation.entity.Booking;
+import com.roomreservation.entity.Room;
 import com.roomreservation.entity.SysUser;
 import com.roomreservation.mapper.BookingMapper;
+import com.roomreservation.mapper.RoomMapper;
 import com.roomreservation.service.IBookingService;
 import com.roomreservation.utils.TokenUtils;
 import jakarta.annotation.Resource;
@@ -21,7 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 import cn.hutool.core.util.StrUtil;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 用户预约接口：创建、我的预约、退约
@@ -34,6 +38,8 @@ public class BookingController {
     private IBookingService bookingService;
     @Resource
     private BookingMapper bookingMapper;
+    @Resource
+    private RoomMapper roomMapper;
 
     @PostMapping
     public Result create(@RequestBody Booking booking) {
@@ -55,6 +61,7 @@ public class BookingController {
         }
         wrapper.orderByDesc(Booking::getBookDate).orderByDesc(Booking::getStartMin);
         Page<Booking> result = bookingMapper.selectPage(new Page<>(page, size), wrapper);
+        fillRoomName(result.getRecords());
         Map<String, Object> data = new HashMap<>();
         data.put("list", result.getRecords());
         data.put("total", result.getTotal());
@@ -66,5 +73,15 @@ public class BookingController {
         SysUser user = TokenUtils.getCurrentUser();
         bookingService.cancelBooking(user.getId(), id);
         return Result.success();
+    }
+
+    private void fillRoomName(List<Booking> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        List<Integer> roomIds = records.stream().map(Booking::getRoomId).distinct().collect(Collectors.toList());
+        Map<Integer, String> names = roomMapper.selectBatchIds(roomIds).stream()
+                .collect(Collectors.toMap(Room::getId, Room::getName));
+        records.forEach(b -> b.setRoomName(names.get(b.getRoomId())));
     }
 }
