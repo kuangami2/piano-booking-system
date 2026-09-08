@@ -12,6 +12,7 @@ import com.roomreservation.exception.ServiceException;
 import com.roomreservation.mapper.RoomMapper;
 import com.roomreservation.mapper.WatchMapper;
 import com.roomreservation.service.IWatchService;
+import com.roomreservation.service.RateLimitService;
 import com.roomreservation.utils.TokenUtils;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -41,11 +42,14 @@ public class WatchController {
     private WatchMapper watchMapper;
     @Resource
     private RoomMapper roomMapper;
+    @Resource
+    private RateLimitService rateLimitService;
 
     @PostMapping
     public Result add(@RequestBody Watch watch) {
         SysUser user = TokenUtils.getCurrentUser();
         watch.setUserId(user.getId());
+        rateLimitService.check("watch", user.getId());
         watchService.addWatch(watch);
         return Result.success();
     }

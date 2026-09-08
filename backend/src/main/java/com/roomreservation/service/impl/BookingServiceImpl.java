@@ -16,6 +16,7 @@ import com.roomreservation.mapper.MessageMapper;
 import com.roomreservation.mapper.RoomMapper;
 import com.roomreservation.mapper.WatchMapper;
 import com.roomreservation.service.IBookingService;
+import com.roomreservation.service.CacheService;
 import com.roomreservation.service.IRuleConfigService;
 import com.roomreservation.service.ISysUserService;
 import jakarta.annotation.Resource;
@@ -47,6 +48,8 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
     private MessageMapper messageMapper;
     @Resource
     private IRuleConfigService ruleConfigService;
+    @Resource
+    private CacheService cacheService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -140,6 +143,7 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
         target.setEndMin(endMin);
         target.setStatus("booked");
         bookingMapper.insert(target);
+        cacheService.evict("free:" + roomId + ":" + bookDate);
     }
 
     @Override
@@ -167,6 +171,7 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
         bookingMapper.update(null, new LambdaUpdateWrapper<Booking>()
                 .eq(Booking::getId, bookingId)
                 .set(Booking::getStatus, "cancelled"));
+        cacheService.evict("free:" + booking.getRoomId() + ":" + booking.getBookDate());
         notifyWatchers(booking);
     }
 
