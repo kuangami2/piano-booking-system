@@ -54,7 +54,8 @@ CREATE TABLE booking (
     CONSTRAINT fk_book_user FOREIGN KEY (user_id) REFERENCES sys_user(id),
     CONSTRAINT fk_book_room FOREIGN KEY (room_id) REFERENCES room(id),
     CONSTRAINT uk_book_slot UNIQUE (room_id, book_date, start_min) COMMENT '并发兜底，同房同日同起点唯一',
-    INDEX idx_book_room_date (room_id, book_date)
+    INDEX idx_book_room_date (room_id, book_date),
+    INDEX idx_book_user_date (user_id, book_date)
 ) COMMENT='预约表';
 
 CREATE TABLE watch (
@@ -68,7 +69,9 @@ CREATE TABLE watch (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     CONSTRAINT fk_watch_user FOREIGN KEY (user_id) REFERENCES sys_user(id),
     CONSTRAINT fk_watch_room FOREIGN KEY (room_id) REFERENCES room(id),
-    CONSTRAINT uk_watch_slot UNIQUE (user_id, room_id, book_date, start_min) COMMENT '同一用户对同一时段只关注一次'
+    CONSTRAINT uk_watch_slot UNIQUE (user_id, room_id, book_date, start_min) COMMENT '同一用户对同一时段只关注一次',
+    INDEX idx_watch_user (user_id),
+    INDEX idx_watch_room_date (room_id, book_date)
 ) COMMENT='空出提醒关注表';
 
 CREATE TABLE credit_log (

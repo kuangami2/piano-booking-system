@@ -7,6 +7,12 @@ spring:
     url: jdbc:mysql://${ip}:3306/room_reservation?useSSL=false&useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2b8&allowPublicKeyRetrieval=true
     username: root
     password: root
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 3000
+      idle-timeout: 600000
+      max-lifetime: 1800000
   servlet:
     multipart:
       max-file-size: 100MB
@@ -15,6 +21,11 @@ spring:
     time-zone: GMT+8
     serialization:
       write-dates-as-timestamps: false
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 1000ms
 
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
@@ -25,3 +36,11 @@ mybatis-plus:
       update-strategy: IGNORED
 
 ip: 127.0.0.1
+
+# 阶段 A 增强开关，关闭或依赖不可用时回退原路径
+app:
+  enhance:
+    cache-enabled: true
+    rate-limit-enabled: true
+    cache-ttl-seconds: 60
+    rate-limit-per-minute: 10

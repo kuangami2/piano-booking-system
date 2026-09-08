@@ -11,6 +11,7 @@ import com.roomreservation.exception.ServiceException;
 import com.roomreservation.mapper.BookingMapper;
 import com.roomreservation.mapper.InstrumentMapper;
 import com.roomreservation.mapper.RoomMapper;
+import com.roomreservation.service.CacheService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,9 @@ import java.util.Map;
  */
 @Service
 public class AdminRoomService {
+    @Resource
+    private CacheService cacheService;
+
 
     @Resource
     private RoomMapper roomMapper;
@@ -67,6 +71,7 @@ public class AdminRoomService {
      */
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> create(Map<String, Object> body) {
+        evictRoomCache();
         Room room = buildRoom(body, true);
         roomMapper.insert(room);
         replaceInstruments(room.getId(), body.get("instruments"));
@@ -80,6 +85,7 @@ public class AdminRoomService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void update(Integer id, Map<String, Object> body) {
+        evictRoomCache();
         Room room = requireRoom(id);
         LambdaUpdateWrapper<Room> wrapper = new LambdaUpdateWrapper<Room>().eq(Room::getId, id);
         if (body.containsKey("name")) {
@@ -134,6 +140,7 @@ public class AdminRoomService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void delete(Integer id) {
+        evictRoomCache();
         requireRoom(id);
         if (bookingMapper.selectCount(new LambdaQueryWrapper<Booking>().eq(Booking::getRoomId, id)) > 0) {
             throw new ServiceException(Constants.CODE_409, "该琴房存在预约记录，不能删除");
@@ -233,5 +240,11 @@ public class AdminRoomService {
         } catch (NumberFormatException e) {
             throw new ServiceException(Constants.CODE_400, field + " 应为整数");
         }
+    }
+
+    private void evictRoomCache() {
+        cacheService.evictByPrefix("rooms:");
+        cacheService.evictByPrefix("room:");
+        cacheService.evictByPrefix("free:");
     }
 }

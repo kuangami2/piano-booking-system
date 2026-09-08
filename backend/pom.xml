@@ -68,6 +68,12 @@
             <version>5.8.21</version>
         </dependency>
 
+        <!--redis 缓存，阶段 A 增强，可降级-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!--jwt-->
         <dependency>
             <groupId>com.auth0</groupId>

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.roomreservation.common.Constants;
 import com.roomreservation.common.Result;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.roomreservation.common.RuleKeys;
 import com.roomreservation.dto.FreeSlot;
 import com.roomreservation.entity.Booking;
@@ -15,6 +16,7 @@ import com.roomreservation.exception.ServiceException;
 import com.roomreservation.mapper.BookingMapper;
 import com.roomreservation.mapper.InstrumentMapper;
 import com.roomreservation.mapper.RoomMapper;
+import com.roomreservation.service.CacheService;
 import com.roomreservation.service.IRuleConfigService;
 import com.roomreservation.utils.TokenUtils;
 import jakarta.annotation.Resource;
@@ -46,6 +48,8 @@ public class RoomController {
     private BookingMapper bookingMapper;
     @Resource
     private IRuleConfigService ruleConfigService;
+    @Resource
+    private CacheService cacheService;
 
     /**
      * 琴房列表，参数 type 与 q，普通用户仅见对外琴房
@@ -68,10 +72,17 @@ public class RoomController {
             wrapper.like(Room::getName, q);
         }
         wrapper.orderByAsc(Room::getId);
+        String cacheKey = "rooms:" + StrUtil.blankToDefault(type, "-") + ":" + StrUtil.blankToDefault(q, "-")
+                + ":" + page + ":" + size + ":" + privileged;
+        Map<String, Object> cached = cacheService.get(cacheKey, new TypeReference<Map<String, Object>>() {});
+        if (cached != null) {
+            return Result.success(cached);
+        }
         Page<Room> result = roomMapper.selectPage(new Page<>(page, size), wrapper);
         Map<String, Object> data = new HashMap<>();
         data.put("list", result.getRecords());
         data.put("total", result.getTotal());
+        cacheService.put(cacheKey, data);
         return Result.success(data);
     }
 
@@ -115,6 +126,11 @@ public class RoomController {
             day = LocalDate.parse(date);
         } catch (Exception e) {
             throw new ServiceException(Constants.CODE_400, "日期格式应为 yyyy-MM-dd");
+        }
+        String freeCacheKey = "free:" + id + ":" + date;
+        List<FreeSlot> cachedSlots = cacheService.get(freeCacheKey, new TypeReference<List<FreeSlot>>() {});
+        if (cachedSlots != null) {
+            return Result.success(cachedSlots);
         }
         int advanceDays = ruleConfigService.getInt(RuleKeys.BOOKING_ADVANCE_DAYS, 7);
         List<FreeSlot> slots = new ArrayList<>();
@@ -166,6 +182,7 @@ public class RoomController {
             slots.add(new FreeSlot(openStart + i * minUnit, openStart + j * minUnit));
             i = j;
         }
+        cacheService.put(freeCacheKey, slots, 30);
         return Result.success(slots);
     }
 

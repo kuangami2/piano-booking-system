@@ -9,6 +9,7 @@ import com.roomreservation.entity.SysUser;
 import com.roomreservation.mapper.BookingMapper;
 import com.roomreservation.mapper.RoomMapper;
 import com.roomreservation.service.IBookingService;
+import com.roomreservation.service.RateLimitService;
 import com.roomreservation.utils.TokenUtils;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -40,11 +41,14 @@ public class BookingController {
     private BookingMapper bookingMapper;
     @Resource
     private RoomMapper roomMapper;
+    @Resource
+    private RateLimitService rateLimitService;
 
     @PostMapping
     public Result create(@RequestBody Booking booking) {
         SysUser user = TokenUtils.getCurrentUser();
         booking.setUserId(user.getId());
+        rateLimitService.check("booking", user.getId());
         bookingService.createBooking(booking);
         return Result.success();
     }
