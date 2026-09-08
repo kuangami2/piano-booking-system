@@ -26,7 +26,7 @@ public class CacheService {
     private EnhanceProperties props;
     @Resource
     private ObjectMapper objectMapper;
-    @Resource(required = false)
+    @Resource
     private StringRedisTemplate redisTemplate;
 
     private final Map<String, LocalEntry> local = new ConcurrentHashMap<>();

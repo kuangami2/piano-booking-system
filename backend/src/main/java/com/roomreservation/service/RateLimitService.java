@@ -23,7 +23,7 @@ public class RateLimitService {
 
     @Resource
     private EnhanceProperties props;
-    @Resource(required = false)
+    @Resource
     private StringRedisTemplate redisTemplate;
 
     private final Map<String, long[]> local = new ConcurrentHashMap<>();
