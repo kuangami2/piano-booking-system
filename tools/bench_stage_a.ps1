@@ -3,6 +3,7 @@
 $ErrorActionPreference = 'Stop'
 $base = 'http://127.0.0.1:9090'
 $rounds = 200
+$warmup = 20
 
 $login = Invoke-RestMethod -Uri "$base/api/auth/login" -Method Post -ContentType 'application/json' -Body '{"username":"demo","password":"123456"}'
 $h = @{ token = $login.data.token }
@@ -10,6 +11,9 @@ $tomorrow = (Get-Date).AddDays(1).ToString('yyyy-MM-dd')
 
 function Bench {
     param($Name, $Uri)
+    for ($w = 0; $w -lt $warmup; $w++) {
+        Invoke-RestMethod -Uri $Uri -Headers $h | Out-Null
+    }
     $times = New-Object System.Collections.Generic.List[double]
     for ($i = 0; $i -lt $rounds; $i++) {
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
