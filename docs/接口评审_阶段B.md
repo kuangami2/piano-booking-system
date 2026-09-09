@@ -8,6 +8,7 @@
 3. 预约创建命中风控时的响应扩展。
 4. 事件通道为内部实现，不暴露 HTTP 接口。
 5. 请求级幂等请求头 X-Idempotency-Key 是否纳入本期。
+6. 阶段归属：排行榜与临近取消风控同属阶段 B，阶段 C 只做 MQ 事件总线与提醒异步化，本次评审不含阶段 C 内容。
 
 ## 二、待确认要点与建议方案
 1. 排行榜分页：建议 period 取 week 或 month，page 与 size 默认 1 与 20，返回 list 含 rank、userId、name、score，另返回 me 本人排名与分数、updatedAt 更新时间；分数相同按 userId 升序稳定排序。备选只返回前 50 名不分页。
