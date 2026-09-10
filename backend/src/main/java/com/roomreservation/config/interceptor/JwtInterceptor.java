@@ -21,6 +21,10 @@ public class JwtInterceptor implements HandlerInterceptor {
     private ISysUserService sysUserService;
 
     @Override
+    /**
+     * 请求前置拦截：公开接口放行，其余解析 token 载荷取得用户与角色，
+     * 用该用户密码的 BCrypt hash 验签，校验用户存在与角色注解，失败抛 401 或 403。
+     */
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         // 非控制器方法直接放行
         if (!(handler instanceof HandlerMethod handlerMethod)) {

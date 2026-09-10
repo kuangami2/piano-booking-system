@@ -55,6 +55,10 @@ public class RoomController {
      * 琴房列表，参数 type 与 q，普通用户仅见对外琴房
      */
     @GetMapping
+    /**
+     * 琴房列表：普通用户仅见对外琴房，会员与管理可见对内；
+     * 支持类型与关键字筛选与分页，结果按角色与参数维度缓存 60 秒。
+     */
     public Result list(@RequestParam(required = false) String type,
                        @RequestParam(required = false) String q,
                        @RequestParam(defaultValue = "1") Integer page,
@@ -90,6 +94,9 @@ public class RoomController {
      * 琴房详情，含乐器明细与注意事项
      */
     @GetMapping("/{id}")
+    /**
+     * 琴房详情：返回琴房信息、乐器明细与注意事项，对内琴房校验会员权限。
+     */
     public Result detail(@PathVariable Integer id) {
         Room room = roomMapper.selectById(id);
         if (room == null) {
@@ -111,6 +118,10 @@ public class RoomController {
      * 琴房空闲时段查询，返回当日可约连续区间
      */
     @GetMapping("/{id}/free")
+    /**
+     * 空闲时段查询：以最小单位为块标记已占用的预约区间，再合并连续空闲块为区间返回。
+     * 当天只返回当前时刻之后的时段，已过时段与进行中时段不可约；结果缓存 30 秒。
+     */
     public Result free(@PathVariable Integer id,
                        @RequestParam String date) {
         Room room = roomMapper.selectById(id);

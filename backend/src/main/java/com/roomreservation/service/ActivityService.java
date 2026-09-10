@@ -54,6 +54,10 @@ public class ActivityService {
     /**
      * 记录一次行为事件，按权重增减分值，正负由权重决定
      */
+    /**
+     * 记录行为事件：按事件类型取权重，退约权重取负，同时累加周榜与月榜分值。
+     * Redis 可用时写 ZSET 并按周期设置过期，不可用时回退进程内计分，仅单实例演示可用。
+     */
     public void record(Integer userId, String eventType) {
         if (!props.isActivityEnabled() || userId == null || eventType == null) {
             return;
@@ -75,6 +79,10 @@ public class ActivityService {
 
     /**
      * 排行榜查询，返回 list、me 与 updatedAt
+     */
+    /**
+     * 排行榜查询：支持周榜与月榜，返回分页列表、本人排名与分值、最近更新时间。
+     * 分值相同按用户 ID 升序稳定排序，昵称脱敏后返回，不回传邮箱与学号。
      */
     public Map<String, Object> ranking(String period, int page, int size, Integer currentUserId) {
         boolean month = "month".equalsIgnoreCase(period);

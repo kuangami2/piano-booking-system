@@ -39,6 +39,10 @@ public class RateLimitService {
     /**
      * 指定阈值的限流，用于排行榜与风控接口的每分钟 30 次
      */
+    /**
+     * 固定窗口限流：按场景与用户维度计数，窗口一分钟，超过阈值抛业务码 429。
+     * 计数优先用 Redis 原子自增，不可用时回退进程内计数，保证单机可用。
+     */
     public void check(String scene, Integer userId, int limit) {
         if (!props.isRateLimitEnabled() || userId == null) {
             return;

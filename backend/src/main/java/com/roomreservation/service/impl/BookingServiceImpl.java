@@ -60,6 +60,12 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    /**
+     * 创建预约，按固定顺序完成全部校验后写入。
+     * 顺序为参数完整性、用户存在、风控拦截、规则快照、信用阈值、琴房权限、日期范围、
+     * 时间窗与粒度对齐、时长上限、自然周次数、房间行锁与区间冲突、写入与唯一键兜底。
+     * 行锁串行化同一琴房的并发写操作，唯一键兜底同一房间同日同起点的重复写入。
+     */
     public void createBooking(Booking booking) {
         Integer userId = booking.getUserId();
         Integer roomId = booking.getRoomId();
@@ -163,6 +169,10 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    /**
+     * 退约：校验归属与状态，限制自然周退约次数，状态置为已取消；
+     * 随后失效空闲缓存、判定临近取消、记活跃度负分并通知关注该时段的用户。
+     */
     public void cancelBooking(Integer userId, Integer bookingId) {
         Booking booking = bookingMapper.selectById(bookingId);
         if (booking == null) {
@@ -194,6 +204,10 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
 
     /**
      * 退约后向关注该时段的用户发站内提醒，先约先得
+     */
+    /**
+     * 退约后按区间重叠匹配关注该时段的其他用户，写入站内消息并置关注状态为已提醒。
+     * 消息走 message 表抽象，后续可替换为小程序订阅消息通道。
      */
     private void notifyWatchers(Booking booking) {
         List<Watch> watchers = watchMapper.selectList(new LambdaQueryWrapper<Watch>()

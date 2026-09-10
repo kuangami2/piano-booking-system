@@ -33,10 +33,16 @@ public class CacheService {
     /** Redis 故障后短时间跳过重试，避免每次请求都等超时 */
     private volatile long redisDownUntil = 0L;
 
+    /**
+     * 缓存总开关，关闭后读写直接穿透，便于压测对比与故障降级。
+     */
     public boolean enabled() {
         return props.isCacheEnabled();
     }
 
+    /**
+     * 读取缓存并反序列化，未命中或反序列化失败返回 null，由调用方回源查询。
+     */
     public <T> T get(String key, TypeReference<T> type) {
         if (!enabled()) {
             return null;
@@ -80,6 +86,10 @@ public class CacheService {
         local.remove(PREFIX + key);
     }
 
+    /**
+     * 按前缀清理缓存，管理端改动琴房时使用，保证用户端及时看到变更。
+     * 当前实现走 keys 匹配，键空间大时应改为 SCAN 游标，已在后续需求登记。
+     */
     public void evictByPrefix(String prefix) {
         String full = PREFIX + prefix;
         if (redisAvailable()) {

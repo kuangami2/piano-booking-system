@@ -48,6 +48,10 @@ public class RiskService {
     /**
      * 退约时判定：预约开始前窗口内退约计一次临近取消，达阈值加入临时黑名单并重置计数
      */
+    /**
+     * 退约时判定临近取消：退约时刻距预约开始不足窗口分钟即计一次，
+     * 达到阈值写入临时黑名单并重置计数。窗口、阈值与限制时长均由规则参数控制。
+     */
     public void onCancel(Booking booking) {
         if (!props.isRiskEnabled() || booking == null || booking.getUserId() == null) {
             return;
@@ -71,6 +75,9 @@ public class RiskService {
     /**
      * 查询本人风控状态
      */
+    /**
+     * 查询本人风控状态：是否受限、解除时间、临近取消计数，仅返回本人信息。
+     */
     public RiskStatus status(Integer userId) {
         if (userId == null) {
             return new RiskStatus(false, null, null, 0);
@@ -85,6 +92,9 @@ public class RiskService {
 
     /**
      * 预约创建前检查，命中临时限制抛 409 并带解除时间
+     */
+    /**
+     * 创建预约前的强一致检查，命中临时限制则抛业务码 409 并携带解除时间与原因。
      */
     public void checkBeforeBooking(Integer userId) {
         RiskStatus status = status(userId);

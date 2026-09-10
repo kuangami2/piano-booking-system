@@ -31,6 +31,10 @@ public class TokenUtils {
     /**
      * 生成 token，载荷为 用户id-角色，密钥为用户密码，2 小时过期
      */
+    /**
+     * 生成 token：载荷为用户 ID 与角色，签名密钥取用户密码的 BCrypt hash，
+     * 因此用户改密后旧 token 立即失效，无需额外的黑名单。
+     */
     public static String createToken(Integer userId, String role, String sign) {
         return JWT.create()
                 .withAudience(userId + "-" + role)
@@ -40,6 +44,9 @@ public class TokenUtils {
 
     /**
      * 获取当前登录用户，未登录返回 null
+     */
+    /**
+     * 从当前请求头解析 token 并返回登录用户实体，供业务层获取当前用户身份。
      */
     public static SysUser getCurrentUser() {
         try {
