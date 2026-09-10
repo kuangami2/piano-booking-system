@@ -22,6 +22,7 @@ import com.roomreservation.service.RiskService;
 import com.roomreservation.service.IRuleConfigService;
 import com.roomreservation.service.ISysUserService;
 import jakarta.annotation.Resource;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -150,7 +151,12 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
         target.setStartMin(startMin);
         target.setEndMin(endMin);
         target.setStatus("booked");
-        bookingMapper.insert(target);
+        try {
+            bookingMapper.insert(target);
+        } catch (DuplicateKeyException e) {
+            // 唯一键兜底命中，等同并发冲突
+            throw new ServiceException(Constants.CODE_409, "该时段已被预约，请选择其他时段");
+        }
         cacheService.evict("free:" + roomId + ":" + bookDate);
         activityService.record(userId, "booking");
     }

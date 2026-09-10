@@ -53,7 +53,7 @@ CREATE TABLE booking (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     CONSTRAINT fk_book_user FOREIGN KEY (user_id) REFERENCES sys_user(id),
     CONSTRAINT fk_book_room FOREIGN KEY (room_id) REFERENCES room(id),
-    CONSTRAINT uk_book_slot UNIQUE (room_id, book_date, start_min) COMMENT '并发兜底，同房同日同起点唯一',
+    CONSTRAINT uk_book_slot UNIQUE (room_id, book_date, start_min, status) COMMENT '并发兜底，同房同日同起点唯一',
     INDEX idx_book_room_date (room_id, book_date),
     INDEX idx_book_user_date (user_id, book_date)
 ) COMMENT='预约表';
