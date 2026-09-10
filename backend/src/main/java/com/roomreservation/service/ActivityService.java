@@ -91,18 +91,18 @@ public class ActivityService {
             try {
                 Set<ZSetOperations.TypedTuple<String>> tuples =
                         redisTemplate.opsForZSet().reverseRangeWithScores(key, start, end);
-                int rank = (int) start + 1;
+                int rowRank = (int) start + 1;
                 if (tuples != null) {
                     for (ZSetOperations.TypedTuple<String> tuple : tuples) {
                         Integer uid = Integer.valueOf(tuple.getValue());
-                        list.add(new ActivityRankItem(rank++, uid, null, tuple.getScore() == null ? 0D : tuple.getScore()));
+                        list.add(new ActivityRankItem(rowRank++, uid, null, tuple.getScore() == null ? 0D : tuple.getScore()));
                     }
                 }
                 fromRedis = true;
                 if (currentUserId != null) {
-                    Long rank = redisTemplate.opsForZSet().reverseRank(key, String.valueOf(currentUserId));
+                    Long myRank = redisTemplate.opsForZSet().reverseRank(key, String.valueOf(currentUserId));
                     Double score = redisTemplate.opsForZSet().score(key, String.valueOf(currentUserId));
-                    me = meMap(rank == null ? 0 : rank + 1, score == null ? 0D : score);
+                    me = meMap(myRank == null ? 0 : (int) (myRank + 1), score == null ? 0D : score);
                 }
             } catch (Exception e) {
                 markRedisDown(e);
