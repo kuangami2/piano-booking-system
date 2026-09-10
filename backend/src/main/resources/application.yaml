@@ -42,5 +42,7 @@ app:
   enhance:
     cache-enabled: true
     rate-limit-enabled: true
+    activity-enabled: true
+    risk-enabled: true
     cache-ttl-seconds: 60
     rate-limit-per-minute: 10

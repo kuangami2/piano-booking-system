@@ -33,13 +33,20 @@ public class RateLimitService {
      * 按用户与操作维度限流，超限抛 429 业务码
      */
     public void check(String scene, Integer userId) {
+        check(scene, userId, Math.max(1, props.getRateLimitPerMinute()));
+    }
+
+    /**
+     * 指定阈值的限流，用于排行榜与风控接口的每分钟 30 次
+     */
+    public void check(String scene, Integer userId, int limit) {
         if (!props.isRateLimitEnabled() || userId == null) {
             return;
         }
-        int limit = Math.max(1, props.getRateLimitPerMinute());
+        int safeLimit = Math.max(1, limit);
         String key = "rl:" + scene + ":" + userId;
         long count = increase(key);
-        if (count > limit) {
+        if (count > safeLimit) {
             throw new ServiceException(Constants.CODE_429, "操作过于频繁，请稍后再试");
         }
     }

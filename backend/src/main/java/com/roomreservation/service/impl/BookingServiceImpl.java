@@ -16,7 +16,9 @@ import com.roomreservation.mapper.MessageMapper;
 import com.roomreservation.mapper.RoomMapper;
 import com.roomreservation.mapper.WatchMapper;
 import com.roomreservation.service.IBookingService;
+import com.roomreservation.service.ActivityService;
 import com.roomreservation.service.CacheService;
+import com.roomreservation.service.RiskService;
 import com.roomreservation.service.IRuleConfigService;
 import com.roomreservation.service.ISysUserService;
 import jakarta.annotation.Resource;
@@ -50,6 +52,10 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
     private IRuleConfigService ruleConfigService;
     @Resource
     private CacheService cacheService;
+    @Resource
+    private RiskService riskService;
+    @Resource
+    private ActivityService activityService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -69,6 +75,8 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
         if (user == null) {
             throw new ServiceException(Constants.CODE_401, "用户不存在，请重新登录");
         }
+        // 风控拦截：临近取消次数达上限时临时限制预约
+        riskService.checkBeforeBooking(userId);
         // 规则快照
         int minUnit = ruleConfigService.getInt(RuleKeys.BOOKING_MIN_UNIT, 30);
         int maxDuration = ruleConfigService.getInt(RuleKeys.BOOKING_MAX_DURATION, 240);
@@ -144,6 +152,7 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
         target.setStatus("booked");
         bookingMapper.insert(target);
         cacheService.evict("free:" + roomId + ":" + bookDate);
+        activityService.record(userId, "booking");
     }
 
     @Override
@@ -172,6 +181,8 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
                 .eq(Booking::getId, bookingId)
                 .set(Booking::getStatus, "cancelled"));
         cacheService.evict("free:" + booking.getRoomId() + ":" + booking.getBookDate());
+        riskService.onCancel(booking);
+        activityService.record(userId, "cancel");
         notifyWatchers(booking);
     }
 

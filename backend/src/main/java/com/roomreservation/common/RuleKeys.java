@@ -31,4 +31,31 @@ public interface RuleKeys {
 
     /** 信用每日自然恢复值 */
     String CREDIT_DAILY_RESTORE = "credit.dailyRestore";
+
+    /** 活跃度权重：登录 */
+    String ACTIVITY_WEIGHT_LOGIN = "activity.weight.login";
+
+    /** 活跃度权重：预约 */
+    String ACTIVITY_WEIGHT_BOOKING = "activity.weight.booking";
+
+    /** 活跃度权重：退约，计负分 */
+    String ACTIVITY_WEIGHT_CANCEL = "activity.weight.cancel";
+
+    /** 活跃度权重：关注 */
+    String ACTIVITY_WEIGHT_WATCH = "activity.weight.watch";
+
+    /** 活跃度权重：消息已读 */
+    String ACTIVITY_WEIGHT_MESSAGE_READ = "activity.weight.messageRead";
+
+    /** 活跃度权重：反馈 */
+    String ACTIVITY_WEIGHT_FEEDBACK = "activity.weight.feedback";
+
+    /** 临近取消判定窗口，分钟 */
+    String RISK_NEAR_CANCEL_WINDOW = "risk.nearCancelWindowMin";
+
+    /** 临近取消达阈值次数 */
+    String RISK_NEAR_CANCEL_THRESHOLD = "risk.nearCancelThreshold";
+
+    /** 风控黑名单时长，分钟 */
+    String RISK_BLACKLIST_DURATION = "risk.blacklistDurationMin";
 }

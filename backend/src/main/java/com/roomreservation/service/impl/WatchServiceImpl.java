@@ -10,6 +10,7 @@ import com.roomreservation.entity.Watch;
 import com.roomreservation.exception.ServiceException;
 import com.roomreservation.mapper.RoomMapper;
 import com.roomreservation.mapper.WatchMapper;
+import com.roomreservation.service.ActivityService;
 import com.roomreservation.service.IRuleConfigService;
 import com.roomreservation.service.ISysUserService;
 import com.roomreservation.service.IWatchService;
@@ -30,6 +31,8 @@ public class WatchServiceImpl extends ServiceImpl<WatchMapper, Watch> implements
     private ISysUserService sysUserService;
     @Resource
     private IRuleConfigService ruleConfigService;
+    @Resource
+    private ActivityService activityService;
 
     @Override
     public void addWatch(Watch watch) {
@@ -74,5 +77,6 @@ public class WatchServiceImpl extends ServiceImpl<WatchMapper, Watch> implements
         target.setEndMin(watch.getEndMin());
         target.setStatus("active");
         save(target);
+        activityService.record(target.getUserId(), "watch");
     }
 }

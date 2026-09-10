@@ -23,4 +23,10 @@ public class EnhanceProperties {
 
     /** 单用户每分钟操作次数上限 */
     private int rateLimitPerMinute = 10;
+
+    /** 活跃度计分与排行榜开关 */
+    private boolean activityEnabled = true;
+
+    /** 临近取消风控开关 */
+    private boolean riskEnabled = true;
 }

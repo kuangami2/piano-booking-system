@@ -9,6 +9,7 @@ import com.roomreservation.entity.Feedback;
 import com.roomreservation.entity.SysUser;
 import com.roomreservation.exception.ServiceException;
 import com.roomreservation.mapper.FeedbackMapper;
+import com.roomreservation.service.ActivityService;
 import com.roomreservation.utils.TokenUtils;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +31,8 @@ public class FeedbackController {
 
     @Resource
     private FeedbackMapper feedbackMapper;
+    @Resource
+    private ActivityService activityService;
 
     @PostMapping
     public Result submit(@RequestBody Feedback feedback) {
@@ -42,6 +45,7 @@ public class FeedbackController {
         target.setContent(feedback.getContent());
         target.setStatus("pending");
         feedbackMapper.insert(target);
+        activityService.record(user.getId(), "feedback");
         return Result.success();
     }
 

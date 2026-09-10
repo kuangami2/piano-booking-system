@@ -9,6 +9,7 @@ import com.roomreservation.entity.Message;
 import com.roomreservation.entity.SysUser;
 import com.roomreservation.exception.ServiceException;
 import com.roomreservation.mapper.MessageMapper;
+import com.roomreservation.service.ActivityService;
 import com.roomreservation.utils.TokenUtils;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +31,8 @@ public class MessageController {
 
     @Resource
     private MessageMapper messageMapper;
+    @Resource
+    private ActivityService activityService;
 
     @GetMapping
     public Result list(@RequestParam(required = false) Integer unread,
@@ -62,6 +65,7 @@ public class MessageController {
         messageMapper.update(null, new LambdaUpdateWrapper<Message>()
                 .eq(Message::getId, id)
                 .set(Message::getIsRead, true));
+        activityService.record(user.getId(), "messageRead");
         return Result.success();
     }
 }

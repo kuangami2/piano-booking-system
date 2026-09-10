@@ -138,7 +138,16 @@ public class DataInitializer implements ApplicationRunner {
                 {RuleKeys.CREDIT_INITIAL, "100", "信用初始值"},
                 {RuleKeys.CREDIT_MAX, "100", "信用上限"},
                 {RuleKeys.CREDIT_LOW, "60", "信用暂停阈值，低于该值暂停预约"},
-                {RuleKeys.CREDIT_DAILY_RESTORE, "1", "信用每日自然恢复值"}
+                {RuleKeys.CREDIT_DAILY_RESTORE, "1", "信用每日自然恢复值"},
+                {RuleKeys.ACTIVITY_WEIGHT_LOGIN, "1", "活跃度权重，登录"},
+                {RuleKeys.ACTIVITY_WEIGHT_BOOKING, "5", "活跃度权重，预约"},
+                {RuleKeys.ACTIVITY_WEIGHT_CANCEL, "3", "活跃度权重，退约计负分"},
+                {RuleKeys.ACTIVITY_WEIGHT_WATCH, "2", "活跃度权重，关注"},
+                {RuleKeys.ACTIVITY_WEIGHT_MESSAGE_READ, "1", "活跃度权重，消息已读"},
+                {RuleKeys.ACTIVITY_WEIGHT_FEEDBACK, "2", "活跃度权重，反馈"},
+                {RuleKeys.RISK_NEAR_CANCEL_WINDOW, "120", "临近取消判定窗口，分钟"},
+                {RuleKeys.RISK_NEAR_CANCEL_THRESHOLD, "3", "临近取消达阈值次数"},
+                {RuleKeys.RISK_BLACKLIST_DURATION, "60", "风控黑名单时长，分钟"}
         };
         for (String[] d : defaults) {
             RuleConfig cfg = new RuleConfig();

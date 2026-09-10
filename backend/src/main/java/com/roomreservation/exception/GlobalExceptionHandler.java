@@ -1,6 +1,7 @@
 package com.roomreservation.exception;
 
 import com.roomreservation.common.Constants;
+import com.roomreservation.common.RiskBlockedException;
 import com.roomreservation.common.Result;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,6 +17,15 @@ public class GlobalExceptionHandler {
     @ResponseBody
     public Result handle(ServiceException se) {
         return Result.error(se.getCode(), se.getMessage());
+    }
+
+    /**
+     * 风控拦截，返回解除时间与次数
+     */
+    @ExceptionHandler(RiskBlockedException.class)
+    @ResponseBody
+    public Result handleRisk(RiskBlockedException e) {
+        return Result.error(e.getCode(), e.getMessage(), e.getData());
     }
 
     /**

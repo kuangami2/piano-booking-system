@@ -6,6 +6,7 @@ import com.roomreservation.common.Result;
 import com.roomreservation.config.interceptor.AuthAccess;
 import com.roomreservation.entity.SysUser;
 import com.roomreservation.exception.ServiceException;
+import com.roomreservation.service.ActivityService;
 import com.roomreservation.service.ISysUserService;
 import com.roomreservation.utils.TokenUtils;
 import jakarta.annotation.Resource;
@@ -28,6 +29,8 @@ public class AuthController {
 
     @Resource
     private ISysUserService sysUserService;
+    @Resource
+    private ActivityService activityService;
 
     @AuthAccess
     @PostMapping("/register")
@@ -40,6 +43,7 @@ public class AuthController {
     @PostMapping("/login")
     public Result login(@RequestBody SysUser loginUser) {
         SysUser user = sysUserService.login(loginUser.getUsername(), loginUser.getPassword());
+        activityService.record(user.getId(), "login");
         String token = TokenUtils.createToken(user.getId(), user.getRole(), user.getPassword());
         user.setPassword(null);
         Map<String, Object> data = new HashMap<>();
