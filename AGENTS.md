@@ -5,7 +5,7 @@
 
 ## 目录与负责人
 - docs：共享开发文档，组长维护。
-- backend：后端，Spring Boot 3.5，包 com.roomreservation；林义洋负责预约核心、冲突检测、空出提醒、信用与规则。
+- backend：后端，Spring Boot 3.5，包 com.roomreservation，以管理平台脚手架为骨架，原名 3+3 脚手架融合管理平台；林义洋负责预约核心、冲突检测、空出提醒、信用与规则。
 - frontend：frontend/user-web 用户端 5173，刘善宁；frontend/admin-web 管理端 5174，孙业腾。
 - tools：验收与自测脚本。
 
