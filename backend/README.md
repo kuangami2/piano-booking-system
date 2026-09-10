@@ -1,6 +1,6 @@
 # 后端工程 room-reservation-backend
 
-琴房预约管理系统后端，Spring Boot 3.5 加 MyBatis-Plus 3.5.9 加 MySQL，以 3+3 脚手架融合管理平台为骨架改造。
+琴房预约管理系统后端，Spring Boot 3.5 加 MyBatis-Plus 3.5.9 加 MySQL，以管理平台脚手架为骨架改造。
 
 ## 目录结构
 - src/main/java/com/roomreservation：common 公共返回与常量，config 配置与拦截，controller 路由，entity 实体，mapper 数据层，service 业务层，utils 工具。
