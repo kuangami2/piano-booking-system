@@ -5,7 +5,7 @@
 ## 运行
 1. 后端已启动于 127.0.0.1:9090。
 2. npm install
-3. 可选：复制 `.env.example` 为 `.env.local`，后端 v0.3 排行榜接口就绪后设置 `VITE_ACTIVITY_RANKING_ENABLED=true`。
+3. 可选：复制 `.env.example` 为 `.env.local`。后端部署阶段 B v0.5 后，设置 `VITE_ACTIVITY_RANKING_ENABLED=true` 启用排行榜；设置 `VITE_NEAR_CANCEL_RISK_ENABLED=true` 启用预约页临近取消风控提示。两个开关默认关闭，不影响 v1 主流程。
 4. npm run dev，访问 http://127.0.0.1:5173
 
 ## 目录
