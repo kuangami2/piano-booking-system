@@ -25,6 +25,7 @@ public class Booking {
     private Integer roomId;
 
     /** 预约日期 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate bookDate;
 
     /** 开始分钟 */

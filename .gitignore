@@ -39,3 +39,6 @@ application-local.yml
 
 # 运行时上传目录
 uploads/
+
+# 本地环境开关
+.env.local

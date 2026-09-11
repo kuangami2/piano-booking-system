@@ -88,9 +88,12 @@ public class RiskService {
         int count = currentCount(userId);
         Long until = blacklistUntil(userId);
         boolean active = until != null && until > System.currentTimeMillis();
+        // 达标后计数已重置，受限期间回传触发阈值，避免前端展示为 0 次
+        int threshold = Math.max(1, ruleConfigService.getInt(RuleKeys.RISK_NEAR_CANCEL_THRESHOLD, 3));
+        int shownCount = active ? threshold : count;
         String untilText = active ? TIME_FORMAT.format(LocalDateTime.ofInstant(Instant.ofEpochMilli(until), ZoneId.systemDefault())) : null;
         String reason = active ? "临近预约开始时段的退约次数达到上限" : null;
-        return new RiskStatus(active, untilText, reason, count);
+        return new RiskStatus(active, untilText, reason, shownCount);
     }
 
     /**

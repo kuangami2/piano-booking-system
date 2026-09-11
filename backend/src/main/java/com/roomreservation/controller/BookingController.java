@@ -52,8 +52,7 @@ public class BookingController {
         SysUser user = TokenUtils.getCurrentUser();
         booking.setUserId(user.getId());
         rateLimitService.check("booking", user.getId());
-        bookingService.createBooking(booking);
-        return Result.success();
+        return Result.success(bookingService.createBooking(booking));
     }
 
     @GetMapping("/mine")

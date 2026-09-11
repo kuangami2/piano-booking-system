@@ -65,6 +65,11 @@ public class ActivityService {
         if (!props.isActivityEnabled() || userId == null || eventType == null) {
             return;
         }
+        // 排行榜只统计普通用户与会员，管理员行为不计分
+        SysUser actor = sysUserMapper.selectById(userId);
+        if (actor != null && "admin".equals(actor.getRole())) {
+            return;
+        }
         double weight = weight(eventType);
         if (weight == 0) {
             return;

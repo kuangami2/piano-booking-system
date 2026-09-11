@@ -24,6 +24,7 @@ public class Watch {
 
     private Integer roomId;
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate bookDate;
 
     private Integer startMin;

@@ -69,7 +69,7 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
      * 时间窗与粒度对齐、时长上限、自然周次数、房间行锁与区间冲突、写入与唯一键兜底。
      * 行锁串行化同一琴房的并发写操作，唯一键兜底同一房间同日同起点的重复写入。
      */
-    public void createBooking(Booking booking) {
+    public Booking createBooking(Booking booking) {
         Integer userId = booking.getUserId();
         Integer roomId = booking.getRoomId();
         LocalDate bookDate = booking.getBookDate();
@@ -168,6 +168,7 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
         }
         cacheService.evict("free:" + roomId + ":" + bookDate);
         activityService.record(userId, "booking");
+        return target;
     }
 
     @Override
