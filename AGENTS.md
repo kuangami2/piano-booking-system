@@ -1,7 +1,7 @@
 # AGENTS.md，供协作 agent 进仓阅读
 
 ## 项目
-琴房预约系统，三人协作，需求定稿 v1 见 docs/需求说明.md，设计见 docs/架构说明.md，接口契约见 docs/接口清单.md v0.2 冻结，任务分配见 docs/任务分配.md。
+琴房预约系统，三人协作，需求定稿 v1 见 docs/需求说明.md，设计见 docs/架构说明.md，接口契约见 docs/接口清单.md v0.6，任务分配见 docs/任务分配.md。
 
 ## 目录与负责人
 - docs：共享开发文档，组长维护。
@@ -10,7 +10,7 @@
 - tools：验收与自测脚本。
 
 ## 分支约定
-Git Flow：feature 分支开发，并入 develop 集成，验证后合并 master 发布。实际主干 master。
+Git Flow：feature 分支开发，并入 develop 集成，验证后合并 master 发布。当前 develop 含 v1 与阶段 A、B 全部成果，master 为发布主线。
 
 ## 提交规范
 格式：模块加冒号加内容，如 booking 实现冲突检测。
@@ -27,4 +27,5 @@ Git Flow：feature 分支开发，并入 develop 集成，验证后合并 master
 4. 验收演示脚本 tools/demo_test.ps1 在 Windows PowerShell 运行，场景见 docs/验收演示清单.md。
 5. develop 同步：组长在 master 集成验证后推送 origin/develop，组员以 develop 为集成基线。
 6. 接口冻结：新接口先评审并写入 docs/接口清单.md 标注冻结版本，未冻结不得实现。
-7. v1.1 增强走 feature/v1.1-enhance，功能开关控制，依赖不可用时 v1 主链路必须可运行。
+7. v1.1 阶段 A 与阶段 B 已合入 develop，阶段 C 候选；所有增强以配置开关控制，Redis 等依赖不可用时 v1 主链路必须可运行。
+8. 用户端阶段 B 页面由 .env.local 开关控制，不入库；本地开关示例见 frontend/user-web/.env.example。
