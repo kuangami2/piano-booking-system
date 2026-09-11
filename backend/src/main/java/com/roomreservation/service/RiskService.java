@@ -26,6 +26,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * 临近取消风控：窗口内退约计次，达阈值临时限制预约，Redis 优先，不可用时回退进程内
  */
 @Service
+/**
+ * 风控服务：临近取消判定、计数与临时黑名单，创建预约前做同步拦截。
+ */
 public class RiskService {
 
     private static final Logger log = LoggerFactory.getLogger(RiskService.class);

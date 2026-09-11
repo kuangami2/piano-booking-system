@@ -19,6 +19,9 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/users")
+/**
+ * 管理端用户接口：用户列表、会员设置与密码重置。
+ */
 public class AdminUserController {
 
     @Resource

@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/admin/stats")
+/**
+ * 管理端统计接口：首页概览与琴房使用率明细。
+ */
 public class AdminStatsController {
 
     @Resource

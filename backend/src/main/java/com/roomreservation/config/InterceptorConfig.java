@@ -11,6 +11,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupp
  * 拦截 /api/**，公开接口以 @AuthAccess 标注放行
  */
 @Configuration
+/**
+ * Web 配置：注册鉴权拦截器与静态资源映射，注意继承 WebMvcConfigurationSupport 会关闭默认静态映射。
+ */
 public class InterceptorConfig extends WebMvcConfigurationSupport {
 
     @Override

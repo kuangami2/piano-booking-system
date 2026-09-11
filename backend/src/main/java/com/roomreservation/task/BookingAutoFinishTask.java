@@ -14,6 +14,9 @@ import java.time.LocalTime;
  * 预约时间推进：过期的 booked 预约自动置为 finished，每分钟扫描一次
  */
 @Component
+/**
+ * 定时任务：每分钟把过期与当天已结束的预约置为已完成并释放时段。
+ */
 public class BookingAutoFinishTask {
 
     @Resource

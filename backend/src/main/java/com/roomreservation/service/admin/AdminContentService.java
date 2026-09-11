@@ -28,6 +28,9 @@ import java.util.UUID;
  * 管理端内容 Service：轮播与公告增删改、图片上传
  */
 @Service
+/**
+ * 管理端内容业务：公告与轮播维护、图片保存。
+ */
 public class AdminContentService {
 
     private static final Set<String> IMAGE_EXTS = Set.of("jpg", "jpeg", "png", "gif", "webp");

@@ -23,6 +23,9 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin")
+/**
+ * 管理端内容接口：公告与轮播维护、图片上传。
+ */
 public class AdminContentController {
 
     @Resource

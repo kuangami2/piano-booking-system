@@ -23,6 +23,9 @@ import java.time.LocalDate;
  * 关注 Service 实现
  */
 @Service
+/**
+ * 关注业务实现：参数与权限校验、重复关注拦截、计分。
+ */
 public class WatchServiceImpl extends ServiceImpl<WatchMapper, Watch> implements IWatchService {
 
     @Resource

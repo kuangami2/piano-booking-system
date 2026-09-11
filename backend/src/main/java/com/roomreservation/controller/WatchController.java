@@ -34,6 +34,9 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/watches")
+/**
+ * 关注接口：新增关注、我的关注列表、取消关注。
+ */
 public class WatchController {
 
     @Resource

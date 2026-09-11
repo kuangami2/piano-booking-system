@@ -19,6 +19,9 @@ import java.util.Map;
  * 管理端用户 Service：用户列表、设置会员、重置密码
  */
 @Service
+/**
+ * 管理端用户业务：列表查询、会员设置与密码重置。
+ */
 public class AdminUserService {
 
     @Resource

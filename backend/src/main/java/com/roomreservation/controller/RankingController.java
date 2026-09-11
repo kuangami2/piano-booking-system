@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/rankings")
+/**
+ * 排行榜接口：按周榜或月榜查询活跃度排名，按用户每分钟 30 次限流。
+ */
 public class RankingController {
 
     @Resource

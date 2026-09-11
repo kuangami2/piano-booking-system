@@ -9,6 +9,9 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @MapperScan("com.roomreservation.mapper")
+/**
+ * MyBatis-Plus 配置：Mapper 扫描与分页插件。
+ */
 public class MybatisPlusConfig {
 
     @Bean

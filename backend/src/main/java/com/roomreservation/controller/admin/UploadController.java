@@ -22,6 +22,9 @@ import java.nio.file.Paths;
  */
 @RestController
 @RequestMapping("/api/uploads")
+/**
+ * 上传文件公开访问接口：按文件名读取运行目录 uploads 下的图片。
+ */
 public class UploadController {
 
     @AuthAccess

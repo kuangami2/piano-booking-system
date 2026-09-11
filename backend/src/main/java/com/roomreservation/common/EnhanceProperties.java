@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 @ConfigurationProperties(prefix = "app.enhance")
+/**
+ * 增强功能开关：缓存、限流、活跃度与风控开关及默认阈值。
+ */
 public class EnhanceProperties {
 
     /** 缓存总开关 */

@@ -27,6 +27,9 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/feedback")
+/**
+ * 反馈接口：提交反馈与我的反馈记录。
+ */
 public class FeedbackController {
 
     @Resource

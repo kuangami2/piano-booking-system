@@ -18,6 +18,9 @@ import java.util.Map;
  * 管理端规则 Service：全量读取与批量更新，改后刷新缓存即时生效
  */
 @Service
+/**
+ * 管理端规则业务：参数读取与批量保存并刷新缓存。
+ */
 public class AdminRuleService {
 
     @Resource

@@ -23,6 +23,9 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api")
+/**
+ * 内容接口：轮播、公告与规则参数公开视图，供首页与预约表单使用。
+ */
 public class ContentController {
 
     @Resource

@@ -24,6 +24,9 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/credits")
+/**
+ * 管理端信用接口：信用流水查询、人工减分与恢复。
+ */
 public class AdminCreditController {
 
     @Resource

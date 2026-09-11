@@ -38,6 +38,9 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/rooms")
+/**
+ * 琴房接口：列表与详情、空闲时段查询，含角色可见性控制与结果缓存。
+ */
 public class RoomController {
 
     @Resource

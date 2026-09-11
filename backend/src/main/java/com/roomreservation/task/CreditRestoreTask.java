@@ -18,6 +18,9 @@ import java.util.List;
  * 信用分每日自然恢复：低于上限的用户按规则每日加回，记入信用流水
  */
 @Component
+/**
+ * 定时任务：每日按规则恢复信用分并写入流水。
+ */
 public class CreditRestoreTask {
 
     @Resource

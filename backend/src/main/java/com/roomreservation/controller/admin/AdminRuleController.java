@@ -18,6 +18,9 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/rules")
+/**
+ * 管理端规则接口：规则参数读取与批量更新，保存后刷新规则缓存即时生效。
+ */
 public class AdminRuleController {
 
     @Resource

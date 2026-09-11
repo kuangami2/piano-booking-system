@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/risk")
+/**
+ * 风控接口：查询本人临近取消状态，含解除时间与计数。
+ */
 public class RiskController {
 
     @Resource

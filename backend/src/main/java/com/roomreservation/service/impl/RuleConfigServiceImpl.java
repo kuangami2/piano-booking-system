@@ -15,6 +15,9 @@ import java.util.Map;
  * 规则参数 Service 实现，内存缓存，启动与定时全量加载，管理端改参后主动刷新
  */
 @Service
+/**
+ * 规则参数实现：启动加载进内存缓存，管理端改参后主动刷新，另有定时兜底刷新。
+ */
 public class RuleConfigServiceImpl extends ServiceImpl<RuleConfigMapper, RuleConfig> implements IRuleConfigService {
 
     private volatile Map<String, String> cache = new HashMap<>();

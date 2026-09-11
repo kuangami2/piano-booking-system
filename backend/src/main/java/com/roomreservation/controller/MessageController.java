@@ -27,6 +27,9 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/messages")
+/**
+ * 消息接口：站内消息列表与已读标记，并记录活跃度分值。
+ */
 public class MessageController {
 
     @Resource

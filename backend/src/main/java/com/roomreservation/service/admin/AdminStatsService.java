@@ -24,6 +24,9 @@ import java.util.Map;
  * 管理端统计 Service：首页概览与琴房使用率明细
  */
 @Service
+/**
+ * 管理端统计业务：概览指标与琴房使用率计算。
+ */
 public class AdminStatsService {
 
     @Resource

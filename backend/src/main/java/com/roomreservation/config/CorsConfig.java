@@ -7,6 +7,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 @Configuration
+/**
+ * 跨域配置：允许全部来源、请求头与方法的预检缓存。
+ */
 public class CorsConfig {
 
     // 跨域请求最大有效时长，1 天

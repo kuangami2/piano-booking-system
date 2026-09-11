@@ -30,6 +30,9 @@ import java.util.Set;
  * 管理端信用 Service：信用流水、人工减分与恢复；低于阈值后预约创建自然被暂停
  */
 @Service
+/**
+ * 管理端信用业务：流水查询、人工减分与恢复，含阈值暂停逻辑。
+ */
 public class AdminCreditService {
 
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

@@ -16,6 +16,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.util.Date;
 
 @Component
+/**
+ * Token 工具：签发与解析 token，签名密钥取用户密码 hash，改密即失效。
+ */
 public class TokenUtils {
 
     private static ISysUserService staticUserService;

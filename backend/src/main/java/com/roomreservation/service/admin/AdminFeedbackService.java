@@ -27,6 +27,9 @@ import java.util.Set;
  * 管理端反馈 Service：反馈列表与状态处理
  */
 @Service
+/**
+ * 管理端反馈业务：列表与状态处理。
+ */
 public class AdminFeedbackService {
 
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

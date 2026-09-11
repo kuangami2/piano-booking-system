@@ -20,6 +20,9 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/rooms")
+/**
+ * 管理端琴房接口：琴房增删改查与乐器明细维护，改动后清理相关缓存。
+ */
 public class AdminRoomController {
 
     @Resource

@@ -19,6 +19,9 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/feedback")
+/**
+ * 管理端反馈接口：反馈列表与状态处理。
+ */
 public class AdminFeedbackController {
 
     @Resource

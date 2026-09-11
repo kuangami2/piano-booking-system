@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * 统一返回结构：code、msg、data 与成功失败构造方法。
+ */
 public class Result {
 
     private String code;

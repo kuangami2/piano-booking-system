@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/admin/bookings")
+/**
+ * 管理端预约接口：按条件查询预约与管理员取消处理。
+ */
 public class AdminBookingController {
 
     @Resource

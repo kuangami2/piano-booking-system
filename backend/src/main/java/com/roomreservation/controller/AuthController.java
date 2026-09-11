@@ -25,6 +25,9 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/auth")
+/**
+ * 鉴权接口：注册、登录、个人信息查询、修改密码，找回密码为占位实现。
+ */
 public class AuthController {
 
     @Resource

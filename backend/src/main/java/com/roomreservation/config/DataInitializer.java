@@ -26,6 +26,9 @@ import java.util.List;
  * 空库首启自动补种子数据：管理员与演示用户、5 间琴房与乐器、规则默认值、示例公告轮播
  */
 @Component
+/**
+ * 启动初始化：空库时写入管理员与演示用户、琴房与乐器、规则参数、公告与轮播。
+ */
 public class DataInitializer implements ApplicationRunner {
 
     @Resource

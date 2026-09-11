@@ -1,5 +1,8 @@
 package com.roomreservation.common;
 
+/**
+ * 常量定义：业务码 200、400、401、403、404、409、429、500。
+ */
 public interface Constants {
 
     String CODE_200 = "200"; // 请求成功

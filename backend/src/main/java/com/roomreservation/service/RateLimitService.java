@@ -17,6 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * 阶段 A 限流：固定窗口计数，Redis 优先，不可用时回退进程内计数
  */
 @Service
+/**
+ * 限流服务：按场景与用户固定窗口计数，Redis 优先，回退进程内计数。
+ */
 public class RateLimitService {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitService.class);

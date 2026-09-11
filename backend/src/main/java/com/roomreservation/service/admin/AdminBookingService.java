@@ -36,6 +36,9 @@ import java.util.Set;
  * 管理端预约 Service：按日期/琴房/用户/状态查询、管理员取消并触发空出提醒
  */
 @Service
+/**
+ * 管理端预约业务：条件查询与取消处理。
+ */
 public class AdminBookingService {
 
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

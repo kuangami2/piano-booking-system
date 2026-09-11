@@ -17,6 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * 阶段 A 缓存服务：Redis 优先，不可用时回退进程内缓存，整体可用开关关闭
  */
 @Service
+/**
+ * 缓存服务：键值读写与失效，Redis 优先，连接异常时回退进程内缓存。
+ */
 public class CacheService {
 
     private static final Logger log = LoggerFactory.getLogger(CacheService.class);

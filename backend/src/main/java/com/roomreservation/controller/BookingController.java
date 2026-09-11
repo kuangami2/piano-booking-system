@@ -33,6 +33,9 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/bookings")
+/**
+ * 预约接口：创建预约、查询我的预约、退约，含限流与风控拦截。
+ */
 public class BookingController {
 
     @Resource

@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
  * 用户 Service 实现
  */
 @Service
+/**
+ * 用户业务实现：唯一性校验、BCrypt 密码处理与改密。
+ */
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements ISysUserService {
 
     @Override

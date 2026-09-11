@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @ControllerAdvice
+/**
+ * 全局异常处理：业务异常、风控异常与兜底异常统一转为 Result。
+ */
 public class GlobalExceptionHandler {
 
     /**

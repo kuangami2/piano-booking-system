@@ -37,6 +37,9 @@ import java.util.List;
  * 预约 Service 实现
  */
 @Service
+/**
+ * 预约业务实现：完整规则校验、行锁与区间冲突检测、退约释放与空出提醒、计分与风控联动。
+ */
 public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> implements IBookingService {
 
     @Resource

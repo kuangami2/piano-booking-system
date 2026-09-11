@@ -15,6 +15,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+/**
+ * 鉴权拦截器：解析 token、验签、校验用户与角色注解，公开接口放行。
+ */
 public class JwtInterceptor implements HandlerInterceptor {
 
     @Resource

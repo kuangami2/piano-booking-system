@@ -31,6 +31,9 @@ import java.util.stream.Collectors;
  * 活跃度计分与排行榜：Redis ZSET 优先，不可用时回退进程内计分，仅单实例演示可用
  */
 @Service
+/**
+ * 活跃度计分与排行榜：按事件权重累计分值，维护周榜与月榜，Redis 优先并支持进程内降级。
+ */
 public class ActivityService {
 
     private static final Logger log = LoggerFactory.getLogger(ActivityService.class);

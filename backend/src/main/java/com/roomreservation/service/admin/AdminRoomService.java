@@ -26,6 +26,9 @@ import java.util.Map;
  * 管理端琴房 Service：琴房增删改查与乐器明细整体覆盖
  */
 @Service
+/**
+ * 管理端琴房业务：增删改查与乐器整体覆盖，变更后清理缓存。
+ */
 public class AdminRoomService {
     @Resource
     private CacheService cacheService;
