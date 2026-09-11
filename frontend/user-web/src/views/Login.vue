@@ -23,10 +23,16 @@ const loginData = reactive({ username: '', password: '' }); const registerData =
 const forgotData = reactive({ email: '' }); const resetData = reactive({ token: '', newPassword: '' })
 const required = (label) => ({ required: true, message: `请输入${label}`, trigger: 'blur' })
 const loginRules = { username: required('账号'), password: required('密码') }
-const registerRules = { username: required('登录名'), password: [{ required: true, message: '密码至少 6 位', min: 6, trigger: 'blur' }], name: required('姓名'), studentNo: required('学号'), email: [{ required: true, message: '请输入邮箱', type: 'email', trigger: 'blur' }] }
+const usernameRule = { pattern: /^([A-Za-z][A-Za-z0-9_]{3,19}|\d{10})$/, message: '登录名为 4 至 20 位字母开头，或 10 位学号', trigger: 'blur' }
+const passwordRule = { pattern: /^(?=.*[A-Za-z])(?=.*\d)\S{8,20}$/, message: '密码为 8 至 20 位且至少含字母与数字', trigger: 'blur' }
+const nameRule = { pattern: /^[\u4e00-\u9fa5A-Za-z]{2,20}$/, message: '姓名为 2 至 20 位汉字或字母', trigger: 'blur' }
+const studentNoRule = { pattern: /^\d{10}$/, message: '学号为 10 位数字', trigger: 'blur' }
+const registerRules = { username: [required('登录名'), usernameRule], password: [required('密码'), passwordRule], name: [required('姓名'), nameRule], studentNo: [required('学号'), studentNoRule], email: [{ required: true, message: '请输入邮箱', type: 'email', trigger: 'blur' }] }
+// 后端校验以后端为准，命中字段错误时直接标在对应输入框下方
+function showFieldError(form, e) { const field = e?.data?.field; const item = field && form.value?.fields?.find((f) => f.prop === field); if (item) { item.validateState = 'error'; item.validateMessage = e.message } else { ElMessage.error(e.message) } }
 const dialogVisible = computed({ get: () => !!dialog.value, set: (value) => { if (!value) dialog.value = '' } })
 async function submitLogin() { if (!(await loginForm.value?.validate().catch(() => false))) return; loading.value = true; try { const data = await login(loginData); localStorage.setItem('token', data.token); localStorage.setItem('user', JSON.stringify(data.user)); ElMessage.success('登录成功'); router.replace(route.query.redirect || '/home') } catch (e) { ElMessage.error(e.message) } finally { loading.value = false } }
-async function submitRegister() { if (!(await registerForm.value?.validate().catch(() => false))) return; loading.value = true; try { await register(registerData); ElMessage.success('注册成功，请登录'); tab.value = 'login'; loginData.username = registerData.username } catch (e) { ElMessage.error(e.message) } finally { loading.value = false } }
+async function submitRegister() { if (!(await registerForm.value?.validate().catch(() => false))) return; loading.value = true; try { await register(registerData); ElMessage.success('注册成功，请登录'); tab.value = 'login'; loginData.username = registerData.username } catch (e) { showFieldError(registerForm, e) } finally { loading.value = false } }
 async function submitForgot() { if (!forgotData.email) return ElMessage.warning('请输入邮箱'); try { await forgotPassword(forgotData) } catch (e) { ElMessage.info(e.message || '邮件通道未接入，请联系管理员') } }
 async function submitReset() { try { await resetPassword({ token: resetData.token, newPassword: resetData.newPassword }) } catch (e) { ElMessage.info(e.message || '重置通道未接入，请联系管理员') } }
 </script>

@@ -20,7 +20,9 @@ CREATE TABLE sys_user (
     credit INT DEFAULT 100 COMMENT '信用分',
     openid VARCHAR(64) COMMENT '微信 openid，预留小程序迁移',
     status VARCHAR(10) DEFAULT 'normal' COMMENT '状态，normal 或 banned',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    UNIQUE KEY uk_user_student_no (student_no) COMMENT '学号唯一，防一人多号',
+    UNIQUE KEY uk_user_email (email) COMMENT '邮箱唯一，防重复注册'
 ) COMMENT='用户表';
 
 CREATE TABLE room (

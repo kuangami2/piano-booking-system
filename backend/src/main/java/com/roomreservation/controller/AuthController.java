@@ -4,12 +4,16 @@ import cn.hutool.core.util.StrUtil;
 import com.roomreservation.common.Constants;
 import com.roomreservation.common.Result;
 import com.roomreservation.config.interceptor.AuthAccess;
+import com.roomreservation.dto.ChangePasswordRequest;
+import com.roomreservation.dto.LoginRequest;
+import com.roomreservation.dto.RegisterRequest;
 import com.roomreservation.entity.SysUser;
 import com.roomreservation.exception.ServiceException;
 import com.roomreservation.service.ActivityService;
 import com.roomreservation.service.ISysUserService;
 import com.roomreservation.utils.TokenUtils;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -37,15 +41,15 @@ public class AuthController {
 
     @AuthAccess
     @PostMapping("/register")
-    public Result register(@RequestBody SysUser user) {
-        sysUserService.register(user);
+    public Result register(@Valid @RequestBody RegisterRequest form) {
+        sysUserService.register(form);
         return Result.success();
     }
 
     @AuthAccess
     @PostMapping("/login")
-    public Result login(@RequestBody SysUser loginUser) {
-        SysUser user = sysUserService.login(loginUser.getUsername(), loginUser.getPassword());
+    public Result login(@Valid @RequestBody LoginRequest form) {
+        SysUser user = sysUserService.login(form.getUsername(), form.getPassword());
         activityService.record(user.getId(), "login");
         String token = TokenUtils.createToken(user.getId(), user.getRole(), user.getPassword());
         user.setPassword(null);
@@ -66,7 +70,7 @@ public class AuthController {
     }
 
     @PutMapping("/password")
-    public Result changePassword(@RequestBody SysUser form) {
+    public Result changePassword(@Valid @RequestBody ChangePasswordRequest form) {
         SysUser user = TokenUtils.getCurrentUser();
         if (user == null) {
             throw new ServiceException(Constants.CODE_401, "未登录");
