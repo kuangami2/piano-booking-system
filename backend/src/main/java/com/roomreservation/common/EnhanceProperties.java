@@ -27,6 +27,9 @@ public class EnhanceProperties {
     /** 单用户每分钟操作次数上限 */
     private int rateLimitPerMinute = 10;
 
+    /** 未登录接口按来源 IP 每分钟次数上限 */
+    private int authRateLimitPerMinute = 20;
+
     /** 活跃度计分与排行榜开关 */
     private boolean activityEnabled = true;
 

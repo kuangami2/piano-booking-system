@@ -1,18 +1,22 @@
 package com.roomreservation.controller;
 
-import cn.hutool.core.util.StrUtil;
 import com.roomreservation.common.Constants;
 import com.roomreservation.common.Result;
 import com.roomreservation.config.interceptor.AuthAccess;
 import com.roomreservation.dto.ChangePasswordRequest;
+import com.roomreservation.dto.ForgotPasswordRequest;
 import com.roomreservation.dto.LoginRequest;
 import com.roomreservation.dto.RegisterRequest;
+import com.roomreservation.dto.ResetPasswordRequest;
 import com.roomreservation.entity.SysUser;
 import com.roomreservation.exception.ServiceException;
 import com.roomreservation.service.ActivityService;
 import com.roomreservation.service.ISysUserService;
+import com.roomreservation.service.RateLimitService;
 import com.roomreservation.utils.TokenUtils;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,17 +42,25 @@ public class AuthController {
     private ISysUserService sysUserService;
     @Resource
     private ActivityService activityService;
+    @Resource
+    private RateLimitService rateLimitService;
+
+    /** 邮件通道开关，未接入时重置令牌随响应返回便于本地联调 */
+    @Value("${app.mail.enabled:false}")
+    private boolean mailEnabled;
 
     @AuthAccess
     @PostMapping("/register")
-    public Result register(@Valid @RequestBody RegisterRequest form) {
+    public Result register(@Valid @RequestBody RegisterRequest form, HttpServletRequest request) {
+        rateLimitService.checkIp("register", clientIp(request));
         sysUserService.register(form);
         return Result.success();
     }
 
     @AuthAccess
     @PostMapping("/login")
-    public Result login(@Valid @RequestBody LoginRequest form) {
+    public Result login(@Valid @RequestBody LoginRequest form, HttpServletRequest request) {
+        rateLimitService.checkIp("login", clientIp(request));
         SysUser user = sysUserService.login(form.getUsername(), form.getPassword());
         activityService.record(user.getId(), "login");
         String token = TokenUtils.createToken(user.getId(), user.getRole(), user.getPassword());
@@ -81,18 +93,36 @@ public class AuthController {
 
     @AuthAccess
     @PostMapping("/forgot")
-    public Result forgot(@RequestBody SysUser form) {
-        if (StrUtil.isBlank(form.getEmail())) {
-            throw new ServiceException(Constants.CODE_400, "邮箱不能为空");
+    public Result forgot(@Valid @RequestBody ForgotPasswordRequest form, HttpServletRequest request) {
+        rateLimitService.checkIp("forgot", clientIp(request));
+        String token = sysUserService.forgotPassword(form.getEmail().trim());
+        Map<String, Object> data = new HashMap<>();
+        data.put("sent", token != null);
+        data.put("expireMinutes", 30);
+        // 邮件通道未接入时把令牌随响应返回，接入后置 app.mail.enabled 为 true 即不再返回
+        if (token != null && !mailEnabled) {
+            data.put("token", token);
         }
-        // 邮箱发送通道待接入，先提示管理员重置
-        return Result.error(Constants.CODE_400, "邮件发送通道未接入，请联系管理员重置密码");
+        return Result.success(data);
     }
 
     @AuthAccess
     @PostMapping("/reset")
-    public Result reset(@RequestBody SysUser form) {
-        // 重置链接 token 校验待接入
-        return Result.error(Constants.CODE_400, "重置链接校验通道未接入，请联系管理员重置密码");
+    public Result reset(@Valid @RequestBody ResetPasswordRequest form, HttpServletRequest request) {
+        rateLimitService.checkIp("reset", clientIp(request));
+        sysUserService.resetPassword(form.getToken().trim(), form.getNewPassword());
+        return Result.success();
+    }
+
+    /**
+     * 取请求来源 IP，反向代理场景优先取 X-Forwarded-For 首个地址
+     */
+    private String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            int comma = forwarded.indexOf(',');
+            return (comma > 0 ? forwarded.substring(0, comma) : forwarded).trim();
+        }
+        return request.getRemoteAddr();
     }
 }

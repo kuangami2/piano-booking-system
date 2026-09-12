@@ -1,5 +1,6 @@
 package com.roomreservation.service.impl;
 
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -7,21 +8,35 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.roomreservation.common.Constants;
 import com.roomreservation.dto.RegisterRequest;
+import com.roomreservation.entity.PasswordReset;
 import com.roomreservation.entity.SysUser;
 import com.roomreservation.exception.ServiceException;
+import com.roomreservation.mapper.PasswordResetMapper;
 import com.roomreservation.mapper.SysUserMapper;
 import com.roomreservation.service.ISysUserService;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 /**
  * 用户 Service 实现
  */
 @Service
+@Slf4j
 /**
- * 用户业务实现：唯一性校验、BCrypt 密码处理与改密。
+ * 用户业务实现：唯一性校验、BCrypt 密码处理、改密与令牌找回。
  */
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements ISysUserService {
+
+    /** 重置令牌有效分钟数 */
+    private static final int RESET_TOKEN_MINUTES = 30;
+
+    @Resource
+    private PasswordResetMapper passwordResetMapper;
 
     @Override
     public void register(RegisterRequest form) {
@@ -103,5 +118,48 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         update(new LambdaUpdateWrapper<SysUser>()
                 .eq(SysUser::getId, userId)
                 .set(SysUser::getPassword, BCrypt.hashpw(newPassword)));
+    }
+
+    @Override
+    public String forgotPassword(String email) {
+        SysUser user = getOne(new LambdaQueryWrapper<SysUser>().eq(SysUser::getEmail, email));
+        if (user == null) {
+            // 邮箱未注册时不暴露状态，接口统一按已发送提示
+            return null;
+        }
+        // 作废该用户此前未使用的令牌，保证同一时间只有一个有效令牌
+        passwordResetMapper.update(null, new LambdaUpdateWrapper<PasswordReset>()
+                .eq(PasswordReset::getUserId, user.getId())
+                .eq(PasswordReset::getUsed, false)
+                .set(PasswordReset::getUsed, true));
+        PasswordReset reset = new PasswordReset();
+        reset.setUserId(user.getId());
+        reset.setToken(IdUtil.fastSimpleUUID());
+        reset.setExpireAt(LocalDateTime.now().plusMinutes(RESET_TOKEN_MINUTES));
+        reset.setUsed(false);
+        passwordResetMapper.insert(reset);
+        log.info("生成密码重置令牌 userId={} token={} 有效期 {} 分钟", user.getId(), reset.getToken(), RESET_TOKEN_MINUTES);
+        return reset.getToken();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void resetPassword(String token, String newPassword) {
+        PasswordReset reset = passwordResetMapper.selectOne(new LambdaQueryWrapper<PasswordReset>()
+                .eq(PasswordReset::getToken, token));
+        if (reset == null || Boolean.TRUE.equals(reset.getUsed())) {
+            throw new ServiceException(Constants.CODE_400, "重置令牌无效或已使用");
+        }
+        if (reset.getExpireAt() == null || reset.getExpireAt().isBefore(LocalDateTime.now())) {
+            throw new ServiceException(Constants.CODE_400, "重置令牌已过期，请重新申请");
+        }
+        update(new LambdaUpdateWrapper<SysUser>()
+                .eq(SysUser::getId, reset.getUserId())
+                .set(SysUser::getPassword, BCrypt.hashpw(newPassword)));
+        // 重置成功即作废该用户全部令牌
+        passwordResetMapper.update(null, new LambdaUpdateWrapper<PasswordReset>()
+                .eq(PasswordReset::getUserId, reset.getUserId())
+                .set(PasswordReset::getUsed, true));
+        log.info("密码重置成功 userId={}", reset.getUserId());
     }
 }

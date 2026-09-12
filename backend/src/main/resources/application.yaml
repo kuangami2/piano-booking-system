@@ -30,10 +30,16 @@ spring:
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 默认不打印 SQL，排查时把 com.roomreservation.mapper 调到 debug
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   global-config:
     db-config:
       update-strategy: IGNORED
+
+# SQL 日志按需开启，避免标准输出成为并发瓶颈
+logging:
+  level:
+    com.roomreservation.mapper: warn
 
 ip: 127.0.0.1
 
@@ -46,3 +52,7 @@ app:
     risk-enabled: true
     cache-ttl-seconds: 60
     rate-limit-per-minute: 10
+    auth-rate-limit-per-minute: 20
+  mail:
+    # 邮件通道未接入，找回密码生成的令牌随响应返回便于本地联调
+    enabled: false

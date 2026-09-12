@@ -6,12 +6,16 @@ import com.roomreservation.common.EnhanceProperties;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * 阶段 A 缓存服务：Redis 优先，不可用时回退进程内缓存，整体可用开关关闭
@@ -33,6 +37,8 @@ public class CacheService {
     private StringRedisTemplate redisTemplate;
 
     private final Map<String, LocalEntry> local = new ConcurrentHashMap<>();
+    /** 击穿保护用的键级锁，仅回源期间存在 */
+    private final Map<String, Object> loading = new ConcurrentHashMap<>();
     /** Redis 故障后短时间跳过重试，避免每次请求都等超时 */
     private volatile long redisDownUntil = 0L;
 
@@ -60,6 +66,34 @@ public class CacheService {
             log.warn("缓存反序列化失败，忽略 key={}", key);
             evict(key);
             return null;
+        }
+    }
+
+    /**
+     * 击穿保护：未命中时同一键只允许一个线程回源，其余线程等待并复用结果。
+     * 当前为进程内单飞，多实例部署需换成分布式锁。
+     */
+    public <T> T getOrLoad(String key, TypeReference<T> type, Supplier<T> loader) {
+        T cached = get(key, type);
+        if (cached != null) {
+            return cached;
+        }
+        Object lock = loading.computeIfAbsent(key, k -> new Object());
+        synchronized (lock) {
+            T second = get(key, type);
+            if (second != null) {
+                loading.remove(key);
+                return second;
+            }
+            try {
+                T value = loader.get();
+                if (value != null) {
+                    put(key, value);
+                }
+                return value;
+            } finally {
+                loading.remove(key);
+            }
         }
     }
 
@@ -91,14 +125,20 @@ public class CacheService {
 
     /**
      * 按前缀清理缓存，管理端改动琴房时使用，保证用户端及时看到变更。
-     * 当前实现走 keys 匹配，键空间大时应改为 SCAN 游标，已在后续需求登记。
+     * Redis 侧用 SCAN 游标分批扫描后删除，避免 KEYS 在大键空间下阻塞。
      */
     public void evictByPrefix(String prefix) {
         String full = PREFIX + prefix;
         if (redisAvailable()) {
             try {
-                Set<String> keys = redisTemplate.keys(full + "*");
-                if (keys != null && !keys.isEmpty()) {
+                Set<String> keys = new HashSet<>();
+                ScanOptions options = ScanOptions.scanOptions().match(full + "*").count(200).build();
+                try (Cursor<String> cursor = redisTemplate.scan(options)) {
+                    while (cursor.hasNext()) {
+                        keys.add(cursor.next());
+                    }
+                }
+                if (!keys.isEmpty()) {
                     redisTemplate.delete(keys);
                 }
             } catch (Exception e) {

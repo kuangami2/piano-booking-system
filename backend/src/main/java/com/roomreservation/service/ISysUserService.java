@@ -24,4 +24,14 @@ public interface ISysUserService extends IService<SysUser> {
      */
     void changePassword(Integer userId, String oldPassword, String newPassword);
 
+    /**
+     * 找回密码，生成一次性重置令牌，邮箱不存在时返回 null 不暴露注册状态
+     */
+    String forgotPassword(String email);
+
+    /**
+     * 凭令牌重置密码，令牌一次性且过期失效，重置后其余令牌一并作废
+     */
+    void resetPassword(String token, String newPassword);
+
 }

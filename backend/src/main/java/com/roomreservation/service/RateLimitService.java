@@ -58,6 +58,21 @@ public class RateLimitService {
         }
     }
 
+    /**
+     * 未登录接口按来源 IP 限流，用于登录、注册、找回与重置，防止高频尝试消耗 CPU
+     */
+    public void checkIp(String scene, String ip) {
+        if (!props.isRateLimitEnabled()) {
+            return;
+        }
+        int limit = Math.max(1, props.getAuthRateLimitPerMinute());
+        String key = "rl:ip:" + scene + ":" + (ip == null || ip.isBlank() ? "unknown" : ip);
+        long count = increase(key);
+        if (count > limit) {
+            throw new ServiceException(Constants.CODE_429, "操作过于频繁，请稍后再试");
+        }
+    }
+
     private long increase(String key) {
         if (redisTemplate != null && System.currentTimeMillis() >= redisDownUntil) {
             try {

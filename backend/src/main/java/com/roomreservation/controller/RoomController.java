@@ -81,15 +81,14 @@ public class RoomController {
         wrapper.orderByAsc(Room::getId);
         String cacheKey = "rooms:" + StrUtil.blankToDefault(type, "-") + ":" + StrUtil.blankToDefault(q, "-")
                 + ":" + page + ":" + size + ":" + privileged;
-        Map<String, Object> cached = cacheService.get(cacheKey, new TypeReference<Map<String, Object>>() {});
-        if (cached != null) {
-            return Result.success(cached);
-        }
-        Page<Room> result = roomMapper.selectPage(new Page<>(page, size), wrapper);
-        Map<String, Object> data = new HashMap<>();
-        data.put("list", result.getRecords());
-        data.put("total", result.getTotal());
-        cacheService.put(cacheKey, data);
+        // 缓存未命中时同键并发只回源一次，避免热点键失效瞬间打满数据库
+        Map<String, Object> data = cacheService.getOrLoad(cacheKey, new TypeReference<Map<String, Object>>() {}, () -> {
+            Page<Room> result = roomMapper.selectPage(new Page<>(page, size), wrapper);
+            Map<String, Object> loaded = new HashMap<>();
+            loaded.put("list", result.getRecords());
+            loaded.put("total", result.getTotal());
+            return loaded;
+        });
         return Result.success(data);
     }
 
@@ -142,15 +141,21 @@ public class RoomController {
             throw new ServiceException(Constants.CODE_400, "日期格式应为 yyyy-MM-dd");
         }
         String freeCacheKey = "free:" + id + ":" + date;
-        List<FreeSlot> cachedSlots = cacheService.get(freeCacheKey, new TypeReference<List<FreeSlot>>() {});
-        if (cachedSlots != null) {
-            return Result.success(cachedSlots);
-        }
-        int advanceDays = ruleConfigService.getInt(RuleKeys.BOOKING_ADVANCE_DAYS, 7);
+        // 缓存未命中时同键并发只回源一次，避免热点键失效瞬间打满数据库
+        List<FreeSlot> slots = cacheService.getOrLoad(freeCacheKey, new TypeReference<List<FreeSlot>>() {},
+                () -> buildFreeSlots(room, day));
+        return Result.success(slots);
+    }
+
+    /**
+     * 计算某一房间某日的空闲区间，按最小单位、时间窗与提前天数过滤并扣除已约时段
+     */
+    private List<FreeSlot> buildFreeSlots(Room room, LocalDate day) {
         List<FreeSlot> slots = new ArrayList<>();
+        int advanceDays = ruleConfigService.getInt(RuleKeys.BOOKING_ADVANCE_DAYS, 7);
         LocalDate today = LocalDate.now();
         if (day.isBefore(today) || day.isAfter(today.plusDays(advanceDays))) {
-            return Result.success(slots);
+            return slots;
         }
         int minUnit = ruleConfigService.getInt(RuleKeys.BOOKING_MIN_UNIT, 30);
         int openStart = room.getOpenStart();
@@ -163,12 +168,12 @@ public class RoomController {
         }
         int totalSlots = (openEnd - openStart) / minUnit;
         if (totalSlots <= 0) {
-            return Result.success(slots);
+            return slots;
         }
         // 已约时段按最小单位块标记占用
         boolean[] busyBlock = new boolean[totalSlots];
         List<Booking> bookings = bookingMapper.selectList(new LambdaQueryWrapper<Booking>()
-                .eq(Booking::getRoomId, id)
+                .eq(Booking::getRoomId, room.getId())
                 .eq(Booking::getBookDate, day)
                 .eq(Booking::getStatus, "booked")
                 .lt(Booking::getStartMin, openEnd)
@@ -196,8 +201,7 @@ public class RoomController {
             slots.add(new FreeSlot(openStart + i * minUnit, openStart + j * minUnit));
             i = j;
         }
-        cacheService.put(freeCacheKey, slots, 30);
-        return Result.success(slots);
+        return slots;
     }
 
     private boolean isPrivileged(SysUser user) {
