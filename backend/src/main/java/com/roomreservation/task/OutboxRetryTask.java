@@ -7,7 +7,8 @@ import com.roomreservation.service.MqAvailabilityService;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.Message;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.GetResponse;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -52,7 +53,8 @@ public class OutboxRetryTask {
     }
 
     /**
-     * 死信队列重投，超过 dlq-max-redelivery 次则丢弃，与 outbox 重试各自计数。
+     * 死信队列重投：在 channel 上 basicGet 后显式确认。
+     * 未达上限则重投回原交换机并确认原消息；达到上限确认丢弃，避免消息滞留反复入队。
      */
     @Scheduled(fixedDelay = 60_000L)
     public void redeliverDlq() {
@@ -60,20 +62,31 @@ public class OutboxRetryTask {
             return;
         }
         for (int i = 0; i < DLQ_BATCH; i++) {
-            Message message = rabbitTemplate.receive(EventTypes.DLQ);
-            if (message == null) {
-                return;
-            }
-            int deaths = deathCount(message);
-            if (deaths >= props.getDlqMaxRedelivery()) {
-                log.warn("死信重投已达 {} 次上限，丢弃消息", deaths);
-                continue;
-            }
-            try {
-                rabbitTemplate.send(EventTypes.EXCHANGE, EventTypes.BOOKING_CANCELLED, message);
-                redelivered.incrementAndGet();
-            } catch (Exception e) {
-                mqAvailability.markDown(e.getMessage());
+            Boolean next = rabbitTemplate.execute(channel -> {
+                GetResponse response = channel.basicGet(EventTypes.DLQ, false);
+                if (response == null) {
+                    return false;
+                }
+                long deliveryTag = response.getEnvelope().getDeliveryTag();
+                int deaths = deathCount(response.getProps());
+                if (deaths >= props.getDlqMaxRedelivery()) {
+                    channel.basicAck(deliveryTag, false);
+                    log.warn("死信重投已达 {} 次上限，确认丢弃消息", deaths);
+                    return true;
+                }
+                try {
+                    channel.basicPublish(EventTypes.EXCHANGE, EventTypes.BOOKING_CANCELLED,
+                            response.getProps(), response.getBody());
+                    channel.basicAck(deliveryTag, false);
+                    redelivered.incrementAndGet();
+                    return true;
+                } catch (Exception e) {
+                    channel.basicNack(deliveryTag, false, true);
+                    mqAvailability.markDown(e.getMessage());
+                    return false;
+                }
+            });
+            if (!Boolean.TRUE.equals(next)) {
                 return;
             }
         }
@@ -86,8 +99,11 @@ public class OutboxRetryTask {
     /**
      * 读取 x-death 表头里的重投次数，值为 list 且首项含 count。
      */
-    private int deathCount(Message message) {
-        Object value = message.getMessageProperties().getHeaders().get("x-death");
+    private int deathCount(AMQP.BasicProperties properties) {
+        if (properties == null || properties.getHeaders() == null) {
+            return 0;
+        }
+        Object value = properties.getHeaders().get("x-death");
         if (value instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Map<?, ?> first) {
             Object count = first.get("count");
             if (count instanceof Number number) {
