@@ -35,4 +35,19 @@ public class EnhanceProperties {
 
     /** 临近取消风控开关 */
     private boolean riskEnabled = true;
+
+    /** 阶段 C：MQ 事件总线开关，关闭或 broker 不可达时退约提醒走同步降级 */
+    private boolean mqEnabled = true;
+
+    /** 事件发布超时，毫秒 */
+    private long mqPublishTimeoutMs = 500;
+
+    /** 本地消息表重投间隔，秒 */
+    private int outboxRetrySeconds = 30;
+
+    /** 本地消息表最大投递重试次数 */
+    private int outboxMaxRetry = 10;
+
+    /** 死信队列最大重投次数，与本地消息表重试各自计数 */
+    private int dlqMaxRedelivery = 5;
 }

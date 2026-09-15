@@ -21,6 +21,18 @@ spring:
     time-zone: GMT+8
     serialization:
       write-dates-as-timestamps: false
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+    # 探测与投递的快速失败窗口，broker 不可用时事件转同步降级
+    connection-timeout: 1000ms
+    listener:
+      simple:
+        acknowledge-mode: manual
+        # 队列尚未声明时不阻塞应用启动，broker 不可用也能起
+        missing-queues-fatal: false
   data:
     redis:
       host: 127.0.0.1
@@ -53,6 +65,12 @@ app:
     cache-ttl-seconds: 60
     rate-limit-per-minute: 10
     auth-rate-limit-per-minute: 20
+    # 阶段 C：MQ 事件总线开关与投递补偿参数
+    mq-enabled: true
+    mq-publish-timeout-ms: 500
+    outbox-retry-seconds: 30
+    outbox-max-retry: 10
+    dlq-max-redelivery: 5
   mail:
     # 邮件通道未接入，找回密码生成的令牌随响应返回便于本地联调
     enabled: false

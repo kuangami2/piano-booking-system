@@ -80,6 +80,12 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
+        <!--RabbitMQ 事件总线，阶段 C，不可用时降级同步-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
         <!--jwt-->
         <dependency>
             <groupId>com.auth0</groupId>
