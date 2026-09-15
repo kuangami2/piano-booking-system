@@ -17,7 +17,7 @@
 | /users | Users.vue | 用户搜索分页、会员开关、重置密码 |
 | /rooms | Rooms.vue | 琴房增删改、对内对外、可约时间窗、乐器明细整体覆盖 |
 | /bookings | Bookings.vue | 按日期/琴房/用户/状态查询，管理员取消 |
-| /rules | Rules.vue | 规则参数编辑与批量保存（保存即生效） |
+| /rules | Rules.vue | 规则参数按预约/信用/活跃度/风控分组编辑，批量保存即生效 |
 | /credits | Credits.vue | 用户信用查询、人工减分/恢复、流水查看 |
 | /content | Content.vue | 轮播与公告增删改、图片上传 |
 | /feedback | Feedback.vue | 反馈列表与状态处理 |

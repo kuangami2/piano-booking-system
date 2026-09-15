@@ -8,8 +8,13 @@
         </div>
       </div>
     </template>
-    <div class="hint">修改保存后即时生效，预约、退约与信用校验按新参数执行。</div>
-    <el-table v-loading="loading" :data="rows" border>
+    <div class="hint">18 条参数按预约、信用、活跃度、风控分组；修改保存后即时生效。</div>
+    <el-table v-loading="loading" :data="rows" border :span-method="groupSpan">
+      <el-table-column label="分组" width="90" align="center">
+        <template #default="{ row }">
+          <el-tag :type="groupTag[row.group] || 'info'" size="small">{{ row.group }}</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="id" label="ID" width="70" />
       <el-table-column prop="key" label="参数键" width="230" />
       <el-table-column label="参数值" width="180" align="center">
@@ -31,6 +36,30 @@ const rows = ref([])
 const loading = ref(false)
 const saving = ref(false)
 
+const GROUP_ORDER = { 预约: 1, 信用: 2, 活跃度: 3, 风控: 4, 其他: 9 }
+const groupTag = { 预约: 'primary', 信用: 'success', 活跃度: 'warning', 风控: 'danger', 其他: 'info' }
+
+function groupOf(key) {
+  const prefix = key.split('.')[0]
+  return { booking: '预约', credit: '信用', activity: '活跃度', risk: '风控' }[prefix] || '其他'
+}
+
+// 第一列按分组合并单元格，展示四组分类
+function groupSpan({ rowIndex, columnIndex }) {
+  if (columnIndex !== 0) {
+    return [1, 1]
+  }
+  const current = rows.value[rowIndex]
+  if (!current || (rowIndex > 0 && rows.value[rowIndex - 1].group === current.group)) {
+    return [0, 0]
+  }
+  let count = 1
+  while (rows.value[rowIndex + count] && rows.value[rowIndex + count].group === current.group) {
+    count++
+  }
+  return [count, 1]
+}
+
 async function load() {
   loading.value = true
   try {
@@ -39,8 +68,12 @@ async function load() {
       id: r.id,
       key: r.ruleKey,
       note: r.note,
-      value: Number(r.ruleValue) || 0
+      value: Number(r.ruleValue) || 0,
+      group: groupOf(r.ruleKey)
     }))
+    rows.value.sort((a, b) =>
+      (GROUP_ORDER[a.group] || 9) - (GROUP_ORDER[b.group] || 9) || a.id - b.id
+    )
   } catch (e) {
     // 提示已由拦截器处理
   } finally {
