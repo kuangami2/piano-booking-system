@@ -76,7 +76,8 @@ public class AdminBookingService {
         if (StrUtil.isNotBlank(status)) {
             wrapper.eq(Booking::getStatus, status);
         }
-        wrapper.orderByDesc(Booking::getBookDate).orderByDesc(Booking::getId);
+        // 最新预约靠前，与用户端口径一致
+        wrapper.orderByDesc(Booking::getId);
         Page<Booking> result = bookingMapper.selectPage(new Page<>(page, size), wrapper);
         List<Booking> records = result.getRecords();
 

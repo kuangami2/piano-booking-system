@@ -65,7 +65,8 @@ public class BookingController {
         if (StrUtil.isNotBlank(status)) {
             wrapper.eq(Booking::getStatus, status);
         }
-        wrapper.orderByDesc(Booking::getBookDate).orderByDesc(Booking::getStartMin);
+        // 最新预约靠前，按自增主键倒序即创建顺序倒序
+        wrapper.orderByDesc(Booking::getId);
         Page<Booking> result = bookingMapper.selectPage(new Page<>(page, size), wrapper);
         fillRoomName(result.getRecords());
         Map<String, Object> data = new HashMap<>();
