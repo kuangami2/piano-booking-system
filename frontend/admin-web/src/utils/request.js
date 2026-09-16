@@ -21,6 +21,15 @@ request.interceptors.response.use(
     if (res.code === '200') {
       return res
     }
+    // 业务码放在响应体里，HTTP 状态恒为 200，因此按 code 判断登录失效
+    if (String(res.code) === '401') {
+      localStorage.removeItem('token')
+      ElMessage.error(res.msg || '登录已过期，请重新登录')
+      if (window.location.hash !== '#/login') {
+        window.location.hash = '#/login'
+      }
+      return Promise.reject(new Error(res.msg || '登录已过期'))
+    }
     ElMessage.error(res.msg || '请求失败')
     return Promise.reject(new Error(res.msg || '请求失败'))
   },

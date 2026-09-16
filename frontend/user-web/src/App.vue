@@ -35,19 +35,14 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { listMessages } from './api/messages'
+import { refreshUnread, unreadCount as unread } from './utils/unread'
 
 const route = useRoute()
 const router = useRouter()
 const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
-const unread = ref(0)
 const collapsed = ref(false)
 const rankingEnabled = import.meta.env.VITE_ACTIVITY_RANKING_ENABLED === 'true'
 
-async function refreshUnread() {
-  if (!localStorage.getItem('token')) return
-  try { unread.value = (await listMessages({ unread: 1, page: 1, size: 1 }))?.total || 0 } catch { unread.value = 0 }
-}
 function handleCommand(command) {
   if (command === 'profile') router.push('/profile')
   if (command === 'logout') { localStorage.removeItem('token'); localStorage.removeItem('user'); router.push('/login') }

@@ -55,6 +55,20 @@ public class MessageController {
         return Result.success(data);
     }
 
+    /**
+     * 一键全部已读：仅作用于本人未读消息，活跃度只记一次
+     */
+    @PutMapping("/read-all")
+    public Result readAll() {
+        SysUser user = TokenUtils.getCurrentUser();
+        messageMapper.update(null, new LambdaUpdateWrapper<Message>()
+                .eq(Message::getUserId, user.getId())
+                .eq(Message::getIsRead, false)
+                .set(Message::getIsRead, true));
+        activityService.record(user.getId(), "messageRead");
+        return Result.success();
+    }
+
     @PutMapping("/{id}/read")
     public Result read(@PathVariable Integer id) {
         SysUser user = TokenUtils.getCurrentUser();
