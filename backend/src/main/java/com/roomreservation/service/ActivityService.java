@@ -129,7 +129,8 @@ public class ActivityService {
             List<Map.Entry<Integer, Double>> ranked = localRanked(key);
             int rank = 1;
             for (Map.Entry<Integer, Double> entry : ranked) {
-                if (rank > end) {
+                // end 是 0 起的闭区间上界，排名是 1 起，故与 end + 1 比较，避免每页少返回一条
+                if (rank > end + 1) {
                     break;
                 }
                 if (rank >= start + 1) {
