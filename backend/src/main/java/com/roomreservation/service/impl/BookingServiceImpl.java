@@ -213,6 +213,7 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
         boolean async = eventBusService.publish(EventTypes.BOOKING_CANCELLED, EventTypes.BOOKING_CANCELLED, payload);
         if (!async) {
             vacancyNotifyService.notifyWatchers(payload);
+            vacancyNotifyService.notifyCancelled(payload, "self");
         }
     }
 

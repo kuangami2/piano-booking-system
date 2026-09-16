@@ -73,6 +73,39 @@ public class VacancyNotifyService {
         return watchers.size();
     }
 
+    /**
+     * 给预约人发取消确认，来源区分本人退约与管理员取消。
+     */
+    public int notifyCancelled(Booking booking, String source) {
+        Room room = roomMapper.selectById(booking.getRoomId());
+        String roomName = room == null ? "琴房" : room.getName();
+        BookingCancelledPayload payload = new BookingCancelledPayload(
+                booking.getId(), booking.getUserId(), booking.getRoomId(), roomName,
+                booking.getBookDate() == null ? null : booking.getBookDate().toString(),
+                booking.getStartMin(), booking.getEndMin());
+        return notifyCancelled(payload, source);
+    }
+
+    /**
+     * 取消确认入口，异步消费者用快照信息，不再回查数据库。
+     */
+    public int notifyCancelled(BookingCancelledPayload payload, String source) {
+        if (payload == null || payload.getUserId() == null) {
+            return 0;
+        }
+        String roomName = payload.getRoomName() == null ? "琴房" : payload.getRoomName();
+        String action = "admin".equals(source) ? "已被管理员取消" : "已退约成功";
+        Message msg = new Message();
+        msg.setUserId(payload.getUserId());
+        msg.setMsgType("booking_cancelled");
+        msg.setContent("你的预约 " + roomName + " " + payload.getBookDate()
+                + " " + minToTime(payload.getStartMin()) + "-" + minToTime(payload.getEndMin())
+                + " " + action);
+        msg.setIsRead(false);
+        messageMapper.insert(msg);
+        return 1;
+    }
+
     private String minToTime(Integer minutes) {
         int value = minutes == null ? 0 : minutes;
         return String.format("%02d:%02d", value / 60, value % 60);

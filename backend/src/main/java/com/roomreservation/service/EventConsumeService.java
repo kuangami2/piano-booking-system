@@ -43,6 +43,7 @@ public class EventConsumeService {
         BookingCancelledPayload payload = objectMapper.convertValue(
                 envelope.getPayload(), BookingCancelledPayload.class);
         int notified = vacancyNotifyService.notifyWatchers(payload);
+        vacancyNotifyService.notifyCancelled(payload, "self");
         ProcessedEvent record = new ProcessedEvent();
         record.setEventId(envelope.getEventId());
         record.setEventType(envelope.getEventType());

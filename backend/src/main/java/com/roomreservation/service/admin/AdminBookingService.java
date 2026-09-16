@@ -6,16 +6,14 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.roomreservation.common.Constants;
 import com.roomreservation.entity.Booking;
-import com.roomreservation.entity.Message;
 import com.roomreservation.entity.Room;
 import com.roomreservation.entity.SysUser;
-import com.roomreservation.entity.Watch;
 import com.roomreservation.exception.ServiceException;
 import com.roomreservation.mapper.BookingMapper;
 import com.roomreservation.mapper.MessageMapper;
 import com.roomreservation.mapper.RoomMapper;
 import com.roomreservation.mapper.SysUserMapper;
-import com.roomreservation.mapper.WatchMapper;
+import com.roomreservation.service.VacancyNotifyService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,13 +45,11 @@ public class AdminBookingService {
     @Resource
     private BookingMapper bookingMapper;
     @Resource
+    private VacancyNotifyService vacancyNotifyService;
+    @Resource
     private RoomMapper roomMapper;
     @Resource
     private SysUserMapper sysUserMapper;
-    @Resource
-    private WatchMapper watchMapper;
-    @Resource
-    private MessageMapper messageMapper;
 
     /**
      * 预约分页查询，可选 date、roomId、userId、status 过滤，附琴房名与用户信息
@@ -142,42 +138,8 @@ public class AdminBookingService {
         bookingMapper.update(null, new LambdaUpdateWrapper<Booking>()
                 .eq(Booking::getId, bookingId)
                 .set(Booking::getStatus, "cancelled"));
-        notifyWatchers(booking);
-    }
-
-    /**
-     * 取消后向关注该时段的用户发站内提醒，逻辑与用户端退约保持一致
-     */
-    private void notifyWatchers(Booking booking) {
-        List<Watch> watchers = watchMapper.selectList(new LambdaQueryWrapper<Watch>()
-                .eq(Watch::getRoomId, booking.getRoomId())
-                .eq(Watch::getBookDate, booking.getBookDate())
-                .eq(Watch::getStatus, "active")
-                .ne(Watch::getUserId, booking.getUserId())
-                .lt(Watch::getStartMin, booking.getEndMin())
-                .gt(Watch::getEndMin, booking.getStartMin()));
-        if (watchers.isEmpty()) {
-            return;
-        }
-        Room room = roomMapper.selectById(booking.getRoomId());
-        String roomName = room == null ? "琴房" : room.getName();
-        String content = "你关注的 " + roomName + " " + booking.getBookDate()
-                + " " + minToTime(booking.getStartMin()) + "-" + minToTime(booking.getEndMin())
-                + " 已空出，请尽快预约";
-        for (Watch w : watchers) {
-            Message msg = new Message();
-            msg.setUserId(w.getUserId());
-            msg.setMsgType("vacancy");
-            msg.setContent(content);
-            msg.setIsRead(false);
-            messageMapper.insert(msg);
-            watchMapper.update(null, new LambdaUpdateWrapper<Watch>()
-                    .eq(Watch::getId, w.getId())
-                    .set(Watch::getStatus, "notified"));
-        }
-    }
-
-    private String minToTime(int minutes) {
-        return String.format("%02d:%02d", minutes / 60, minutes % 60);
+        // 提醒关注者空出，同时通知预约人本人的预约已被取消
+        vacancyNotifyService.notifyWatchers(booking);
+        vacancyNotifyService.notifyCancelled(booking, "admin");
     }
 }

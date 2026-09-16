@@ -369,5 +369,6 @@ class BookingServiceImplTest {
         service.cancelBooking(1, 5);
 
         verify(vacancyNotifyService).notifyWatchers(any(BookingCancelledPayload.class));
+        verify(vacancyNotifyService).notifyCancelled(any(BookingCancelledPayload.class), org.mockito.ArgumentMatchers.eq("self"));
     }
 }

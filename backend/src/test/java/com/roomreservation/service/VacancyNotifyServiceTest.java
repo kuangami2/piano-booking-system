@@ -9,6 +9,7 @@ import com.roomreservation.mapper.WatchMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -62,6 +63,37 @@ class VacancyNotifyServiceTest {
 
         assertThat(count).isZero();
         verify(messageMapper, never()).insert(any(Message.class));
+    }
+
+    @Test
+    @DisplayName("管理员取消时给预约人发取消确认")
+    void notifiesOwnerWhenCancelledByAdmin() {
+        ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
+
+        int sent = service.notifyCancelled(payload(), "admin");
+
+        assertThat(sent).isEqualTo(1);
+        verify(messageMapper).insert(captor.capture());
+        assertThat(captor.getValue().getUserId()).isEqualTo(1);
+        assertThat(captor.getValue().getMsgType()).isEqualTo("booking_cancelled");
+        assertThat(captor.getValue().getContent()).contains("已被管理员取消").contains("B101");
+    }
+
+    @Test
+    @DisplayName("本人退约时给预约人发退约确认")
+    void notifiesOwnerOnSelfCancel() {
+        ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
+
+        service.notifyCancelled(payload(), "self");
+
+        verify(messageMapper).insert(captor.capture());
+        assertThat(captor.getValue().getContent()).contains("已退约成功");
+    }
+
+    @Test
+    @DisplayName("载荷为空时取消确认直接返回")
+    void skipsCancelledNoticeWithoutPayload() {
+        assertThat(service.notifyCancelled((BookingCancelledPayload) null, "self")).isZero();
     }
 
     @Test

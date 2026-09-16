@@ -17,6 +17,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -51,6 +52,7 @@ class EventConsumeServiceTest {
 
         assertThat(handled).isTrue();
         verify(vacancyNotifyService).notifyWatchers(any(BookingCancelledPayload.class));
+        verify(vacancyNotifyService).notifyCancelled(any(BookingCancelledPayload.class), eq("self"));
         verify(processedEventMapper).insert(any(ProcessedEvent.class));
     }
 
