@@ -16,7 +16,8 @@ const routes = [
       { path: 'rules', name: 'Rules', component: () => import('../views/Rules.vue'), meta: { title: '规则参数' } },
       { path: 'credits', name: 'Credits', component: () => import('../views/Credits.vue'), meta: { title: '信用管理' } },
       { path: 'content', name: 'Content', component: () => import('../views/Content.vue'), meta: { title: '内容管理' } },
-      { path: 'feedback', name: 'AdminFeedback', component: () => import('../views/Feedback.vue'), meta: { title: '反馈处理' } }
+      { path: 'feedback', name: 'AdminFeedback', component: () => import('../views/Feedback.vue'), meta: { title: '反馈处理' } },
+      { path: 'events', name: 'AdminEvents', component: () => import('../views/Events.vue'), meta: { title: '事件概览' } }
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' }

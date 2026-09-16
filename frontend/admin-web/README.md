@@ -21,6 +21,7 @@
 | /credits | Credits.vue | 用户信用查询、人工减分/恢复、流水查看 |
 | /content | Content.vue | 轮播与公告增删改、图片上传 |
 | /feedback | Feedback.vue | 反馈列表与状态处理 |
+| /events | Events.vue | MQ 运行模式、outbox 与死信状态、事件计数概览（阶段 C） |
 
 ## 目录
 - src/api/admin.js：全部管理端接口封装，复用 utils/request.js（自动带 token、统一 Result 处理）。
