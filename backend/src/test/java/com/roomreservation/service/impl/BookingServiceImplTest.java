@@ -13,7 +13,10 @@ import com.roomreservation.mapper.BookingMapper;
 import com.roomreservation.mapper.MessageMapper;
 import com.roomreservation.mapper.RoomMapper;
 import com.roomreservation.mapper.WatchMapper;
+import com.roomreservation.event.BookingCancelledPayload;
 import com.roomreservation.service.ActivityService;
+import com.roomreservation.service.EventBusService;
+import com.roomreservation.service.VacancyNotifyService;
 import com.roomreservation.service.CacheService;
 import com.roomreservation.service.IRuleConfigService;
 import com.roomreservation.service.ISysUserService;
@@ -59,6 +62,8 @@ class BookingServiceImplTest {
     @Mock private CacheService cacheService;
     @Mock private RiskService riskService;
     @Mock private ActivityService activityService;
+    @Mock private EventBusService eventBusService;
+    @Mock private VacancyNotifyService vacancyNotifyService;
 
     @InjectMocks private BookingServiceImpl service;
 
@@ -291,11 +296,12 @@ class BookingServiceImplTest {
     }
 
     @Test
-    @DisplayName("退约成功置为已取消并失效缓存、记负分")
+    @DisplayName("退约成功置为已取消、失效缓存、记负分并发布事件")
     void cancelsOwnBooking() {
         when(bookingMapper.selectById(5)).thenReturn(existingBooking());
         when(bookingMapper.selectCount(any())).thenReturn(0L);
-        when(watchMapper.selectList(any())).thenReturn(List.of());
+        when(roomMapper.selectById(10)).thenReturn(room("outer"));
+        when(eventBusService.publish(anyString(), anyString(), any())).thenReturn(true);
 
         service.cancelBooking(1, 5);
 
@@ -303,7 +309,8 @@ class BookingServiceImplTest {
         verify(cacheService).evict("free:10:" + tomorrow);
         verify(riskService).onCancel(any(Booking.class));
         verify(activityService).record(1, "cancel");
-        verify(messageMapper, never()).insert(any(Message.class));
+        verify(eventBusService).publish(anyString(), anyString(), any(BookingCancelledPayload.class));
+        verify(vacancyNotifyService, never()).notifyWatchers(any(BookingCancelledPayload.class));
     }
 
     @Test
@@ -352,19 +359,15 @@ class BookingServiceImplTest {
     }
 
     @Test
-    @DisplayName("退约后向关注用户发站内提醒并置为已提醒")
-    void notifiesWatchersAfterCancel() {
-        Watch watch = new Watch();
-        watch.setId(3);
-        watch.setUserId(2);
+    @DisplayName("MQ 不可用时退约提醒走同步降级")
+    void fallsBackToSyncNotifyWhenMqUnavailable() {
         when(bookingMapper.selectById(5)).thenReturn(existingBooking());
         when(bookingMapper.selectCount(any())).thenReturn(0L);
-        when(watchMapper.selectList(any())).thenReturn(List.of(watch));
         when(roomMapper.selectById(10)).thenReturn(room("outer"));
+        when(eventBusService.publish(anyString(), anyString(), any())).thenReturn(false);
 
         service.cancelBooking(1, 5);
 
-        verify(messageMapper).insert(any(Message.class));
-        verify(watchMapper).update(isNull(), any());
+        verify(vacancyNotifyService).notifyWatchers(any(BookingCancelledPayload.class));
     }
 }

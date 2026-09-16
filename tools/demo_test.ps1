@@ -35,31 +35,31 @@ function Check {
 }
 
 $stamp = Get-Date -Format 'HHmmss'
-$upwd = 'pass123'
+$upwd = 'pass1234'
 $u1 = 'u1' + $stamp
 $u2 = 'u2' + $stamp
 $tomorrow = (Get-Date).AddDays(1).ToString('yyyy-MM-dd')
 
 Write-Host '== Scene 1: register, login, change password =='
-Call-Api -Method Post -Path '/api/auth/register' -Body @{username = $u1; password = $upwd; name = 'User One'; studentNo = 'T1' + $stamp; email = ($u1 + '@t.local')} | Out-Null
+Call-Api -Method Post -Path '/api/auth/register' -Body @{username = $u1; password = $upwd; name = 'UserOne'; studentNo = ('2023' + $stamp); email = ($u1 + '@t.local')} | Out-Null
 Check 'register u1' $true
-Call-Api -Method Post -Path '/api/auth/register' -Body @{username = $u2; password = $upwd; name = 'User Two'; studentNo = 'T2' + $stamp; email = ($u2 + '@t.local')} | Out-Null
+Call-Api -Method Post -Path '/api/auth/register' -Body @{username = $u2; password = $upwd; name = 'UserTwo'; studentNo = ('2024' + $stamp); email = ($u2 + '@t.local')} | Out-Null
 Check 'register u2' $true
 $loginU2 = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u2; password = $upwd}
 $t2 = $loginU2.data.token
 Check 'login u2 returns token' (-not [string]::IsNullOrEmpty($t2))
-$rejected = Expect-Rejected -Method Post -Path '/api/auth/register' -Body @{username = $u1; password = $upwd; name = 'Dup'; studentNo = 'X9'; email = 'x@t.local'}
+$rejected = Expect-Rejected -Method Post -Path '/api/auth/register' -Body @{username = $u1; password = $upwd; name = 'Dup'; studentNo = '2025000001'; email = 'x@t.local'}
 Check 'duplicate username rejected' ($rejected -eq 1)
 
 $login = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u1; password = $upwd}
 $t1 = $login.data.token
 Check 'login u1 returns token' (-not [string]::IsNullOrEmpty($t1))
 
-Call-Api -Method Put -Path '/api/auth/password' -Body @{password = $upwd; newPassword = 'new123'} -Token $t1 | Out-Null
-$login2 = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u1; password = 'new123'}
+Call-Api -Method Put -Path '/api/auth/password' -Body @{password = $upwd; newPassword = 'new12345'} -Token $t1 | Out-Null
+$login2 = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u1; password = 'new12345'}
 $t1 = $login2.data.token
 Check 'login with new password' (-not [string]::IsNullOrEmpty($t1))
-Call-Api -Method Put -Path '/api/auth/password' -Body @{password = 'new123'; newPassword = $upwd} -Token $t1 | Out-Null
+Call-Api -Method Put -Path '/api/auth/password' -Body @{password = 'new12345'; newPassword = $upwd} -Token $t1 | Out-Null
 Check 'change password back' $true
 $login3 = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = $u1; password = $upwd}
 if (-not $login3.data -or [string]::IsNullOrEmpty($login3.data.token)) { Write-Host ('DEBUG login3 code=' + $login3.code + ' dataNull=' + ($null -eq $login3.data)) }
@@ -127,5 +127,24 @@ Call-Api -Method Put -Path '/api/admin/rules' -Body $payloadRestore -Token $ta |
 $rulesAfter = Call-Api -Method Get -Path '/api/admin/rules' -Token $ta
 $now = ($rulesAfter.data | Where-Object { $_.ruleKey -eq 'booking.maxDurationMin' }).ruleValue
 Check 'rule value restored' ($now -eq $orig)
+
+Write-Host '== Scene C: event bus, async delivery and degradation =='
+$adminLogin = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = 'admin'; password = 'admin123'}
+$tadmin = $adminLogin.data.token
+Check 'admin login returns token' (-not [string]::IsNullOrEmpty($tadmin))
+$summary = Call-Api -Method Get -Path '/api/admin/events/summary' -Token $tadmin
+Check 'event summary reachable' ($summary.code -eq '200')
+Check 'event summary mode valid' (($summary.data.mode -eq 'async') -or ($summary.data.mode -eq 'degraded'))
+if ($summary.data.mode -eq 'async') {
+    Check 'broker reachable in async mode' ($summary.data.brokerReachable -eq $true)
+    Check 'outbox sent count present' ($summary.data.outbox.sent -ge 1)
+    Check 'dlq depth reported' ($null -ne $summary.data.dlq.depth)
+} else {
+    Check 'degraded mode returns null outbox' ($null -eq $summary.data.outbox)
+    Check 'degraded mode returns null dlq' ($null -eq $summary.data.dlq)
+    Check 'degraded still delivered vacancy message' ($msgs.data.total -ge 1)
+}
+$evt = $summary.data.events | Where-Object { $_.eventType -eq 'booking.cancelled' }
+Check 'event counter includes booking.cancelled' ($null -ne $evt -and $evt.count -ge 1)
 
 Write-Host ("RESULT pass=" + $pass + " fail=" + $fail)

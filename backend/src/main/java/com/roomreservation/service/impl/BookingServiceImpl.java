@@ -4,19 +4,19 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.roomreservation.common.Constants;
+import com.roomreservation.common.EventTypes;
+import com.roomreservation.event.BookingCancelledPayload;
 import com.roomreservation.common.RuleKeys;
 import com.roomreservation.entity.Booking;
-import com.roomreservation.entity.Message;
 import com.roomreservation.entity.Room;
 import com.roomreservation.entity.SysUser;
-import com.roomreservation.entity.Watch;
 import com.roomreservation.exception.ServiceException;
 import com.roomreservation.mapper.BookingMapper;
-import com.roomreservation.mapper.MessageMapper;
 import com.roomreservation.mapper.RoomMapper;
-import com.roomreservation.mapper.WatchMapper;
 import com.roomreservation.service.IBookingService;
 import com.roomreservation.service.ActivityService;
+import com.roomreservation.service.EventBusService;
+import com.roomreservation.service.VacancyNotifyService;
 import com.roomreservation.service.CacheService;
 import com.roomreservation.service.RiskService;
 import com.roomreservation.service.IRuleConfigService;
@@ -49,10 +49,6 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
     @Resource
     private BookingMapper bookingMapper;
     @Resource
-    private WatchMapper watchMapper;
-    @Resource
-    private MessageMapper messageMapper;
-    @Resource
     private IRuleConfigService ruleConfigService;
     @Resource
     private CacheService cacheService;
@@ -60,6 +56,10 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
     private RiskService riskService;
     @Resource
     private ActivityService activityService;
+    @Resource
+    private EventBusService eventBusService;
+    @Resource
+    private VacancyNotifyService vacancyNotifyService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -203,46 +203,17 @@ public class BookingServiceImpl extends ServiceImpl<BookingMapper, Booking> impl
         cacheService.evict("free:" + booking.getRoomId() + ":" + booking.getBookDate());
         riskService.onCancel(booking);
         activityService.record(userId, "cancel");
-        notifyWatchers(booking);
-    }
-
-    /**
-     * 退约后向关注该时段的用户发站内提醒，先约先得
-     */
-    /**
-     * 退约后按区间重叠匹配关注该时段的其他用户，写入站内消息并置关注状态为已提醒。
-     * 消息走 message 表抽象，后续可替换为小程序订阅消息通道。
-     */
-    private void notifyWatchers(Booking booking) {
-        List<Watch> watchers = watchMapper.selectList(new LambdaQueryWrapper<Watch>()
-                .eq(Watch::getRoomId, booking.getRoomId())
-                .eq(Watch::getBookDate, booking.getBookDate())
-                .eq(Watch::getStatus, "active")
-                .ne(Watch::getUserId, booking.getUserId())
-                .lt(Watch::getStartMin, booking.getEndMin())
-                .gt(Watch::getEndMin, booking.getStartMin()));
-        if (watchers.isEmpty()) {
-            return;
-        }
+        // 阶段 C：事件走 MQ 异步投递；broker 不可用时同步降级，提醒不丢
         Room room = roomMapper.selectById(booking.getRoomId());
         String roomName = room == null ? "琴房" : room.getName();
-        String content = "你关注的 " + roomName + " " + booking.getBookDate()
-                + " " + minToTime(booking.getStartMin()) + "-" + minToTime(booking.getEndMin())
-                + " 已空出，请尽快预约";
-        for (Watch w : watchers) {
-            Message msg = new Message();
-            msg.setUserId(w.getUserId());
-            msg.setMsgType("vacancy");
-            msg.setContent(content);
-            msg.setIsRead(false);
-            messageMapper.insert(msg);
-            watchMapper.update(null, new LambdaUpdateWrapper<Watch>()
-                    .eq(Watch::getId, w.getId())
-                    .set(Watch::getStatus, "notified"));
+        BookingCancelledPayload payload = new BookingCancelledPayload(booking.getId(), booking.getUserId(),
+                booking.getRoomId(), roomName,
+                booking.getBookDate() == null ? null : booking.getBookDate().toString(),
+                booking.getStartMin(), booking.getEndMin());
+        boolean async = eventBusService.publish(EventTypes.BOOKING_CANCELLED, EventTypes.BOOKING_CANCELLED, payload);
+        if (!async) {
+            vacancyNotifyService.notifyWatchers(payload);
         }
     }
 
-    private String minToTime(int minutes) {
-        return String.format("%02d:%02d", minutes / 60, minutes % 60);
-    }
 }
