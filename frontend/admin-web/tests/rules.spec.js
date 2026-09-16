@@ -59,18 +59,22 @@ describe('管理端规则页', () => {
     saveRules.mockResolvedValue({ code: '200', data: rows })
   })
 
-  it('渲染原 9 条与阶段 B 新增 9 条参数，并可将修改后的新参数随保存提交', async () => {
+  it('按预约/信用/活跃度/风控分组渲染全部参数，并可将修改后的新参数随保存提交', async () => {
     const wrapper = mount(Rules, { global: { plugins: [ElementPlus] } })
     await flush()
 
     for (const key of NEW_KEYS) {
       expect(wrapper.text()).toContain(key)
     }
+    for (const group of ['预约', '信用', '活跃度', '风控']) {
+      expect(wrapper.text()).toContain(group)
+    }
     const inputs = wrapper.findAll('.el-input-number input')
     expect(inputs.length).toBe(rows.length)
 
-    const index = rows.findIndex((row) => row.ruleKey === 'risk.nearCancelThreshold')
-    await inputs[index].setValue('7')
+    const targetRow = wrapper.findAll('tbody tr').find((tr) => tr.text().includes('risk.nearCancelThreshold'))
+    expect(targetRow).toBeTruthy()
+    await targetRow.find('.el-input-number input').setValue('7')
     await flush()
     await wrapper.find('.el-button--primary').trigger('click')
     await flush()

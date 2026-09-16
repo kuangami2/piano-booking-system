@@ -17,6 +17,7 @@
         <el-menu-item index="/credits">信用管理</el-menu-item>
         <el-menu-item index="/content">内容管理</el-menu-item>
         <el-menu-item index="/feedback">反馈处理</el-menu-item>
+        <el-menu-item index="/events">事件概览</el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>

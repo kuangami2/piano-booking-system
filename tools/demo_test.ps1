@@ -11,7 +11,7 @@ function Call-Api {
     $headers = @{}
     if ($Token) { $headers.token = $Token }
     $params = @{ Uri = ($base + $Path); Method = $Method; Headers = $headers; ContentType = 'application/json' }
-    if ($Body) { $params.Body = ($Body | ConvertTo-Json -Compress) }
+    if ($null -ne $Body) { $params.Body = ConvertTo-Json -InputObject $Body -Compress }
     $resp = Invoke-RestMethod @params
     if ($resp.code -ne '200') { throw ($Path + ' -> code ' + $resp.code + ' ' + $resp.msg) }
     return $resp
@@ -98,6 +98,36 @@ Start-Sleep -Seconds 2
 $msgs = Call-Api -Method Get -Path '/api/messages?unread=1' -Token $t2
 Check 'u2 receives vacancy message' ($msgs.data.total -ge 1)
 
+Write-Host '== Scene 5: admin credit deduct suspends booking =='
+$me = Call-Api -Method Get -Path '/api/auth/profile' -Token $t1
+$uid1 = $me.data.id
+$adminLogin = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = 'admin'; password = 'admin123'}
+$ta = $adminLogin.data.token
+Check 'admin login' (-not [string]::IsNullOrEmpty($ta))
+$ulist = Call-Api -Method Get -Path ('/api/admin/users?keyword=' + $u1) -Token $ta
+$creditBefore = [int]$ulist.data.list[0].credit
+$res = Call-Api -Method Put -Path ('/api/admin/credits/' + $uid1 + '/deduct') -Body @{points = 50; reason = 'demo 减分暂停'} -Token $ta
+Check 'deduct 50 credits' ($res.data.credit -eq ($creditBefore - 50))
+Check 'credit paused below threshold' ($res.data.paused -eq $true)
+$rejected = Expect-Rejected -Method Post -Path '/api/bookings' -Body @{roomId = 3; bookDate = $tomorrow; startMin = 960; endMin = 1020} -Token $t1
+Check 'booking blocked while suspended' ($rejected -eq 1)
+$res = Call-Api -Method Put -Path ('/api/admin/credits/' + $uid1 + '/restore') -Body @{points = 50; reason = 'demo 恢复'} -Token $ta
+Check 'restore credit to max 100' ($res.data.credit -eq 100)
+
+Write-Host '== Scene 6: rules live update takes effect =='
+$rules = Call-Api -Method Get -Path '/api/admin/rules' -Token $ta
+Check 'admin reads 18 rule params' ($rules.data.Count -eq 18)
+$orig = ($rules.data | Where-Object { $_.ruleKey -eq 'booking.maxDurationMin' }).ruleValue
+$payload = @(@{key = 'booking.maxDurationMin'; value = '30'})
+Call-Api -Method Put -Path '/api/admin/rules' -Body $payload -Token $ta | Out-Null
+$rejected = Expect-Rejected -Method Post -Path '/api/bookings' -Body @{roomId = 3; bookDate = $tomorrow; startMin = 600; endMin = 660} -Token $t1
+Check '60-min booking rejected after limit change' ($rejected -eq 1)
+$payloadRestore = @(@{key = 'booking.maxDurationMin'; value = [string]$orig})
+Call-Api -Method Put -Path '/api/admin/rules' -Body $payloadRestore -Token $ta | Out-Null
+$rulesAfter = Call-Api -Method Get -Path '/api/admin/rules' -Token $ta
+$now = ($rulesAfter.data | Where-Object { $_.ruleKey -eq 'booking.maxDurationMin' }).ruleValue
+Check 'rule value restored' ($now -eq $orig)
+
 Write-Host '== Scene C: event bus, async delivery and degradation =='
 $adminLogin = Call-Api -Method Post -Path '/api/auth/login' -Body @{username = 'admin'; password = 'admin123'}
 $tadmin = $adminLogin.data.token
@@ -117,6 +147,4 @@ if ($summary.data.mode -eq 'async') {
 $evt = $summary.data.events | Where-Object { $_.eventType -eq 'booking.cancelled' }
 Check 'event counter includes booking.cancelled' ($null -ne $evt -and $evt.count -ge 1)
 
-Write-Host '[SKIP] Scene 5 credit suspend - needs admin credit api (admin module)'
-Write-Host '[SKIP] Scene 6 rules live update - needs admin rules api (admin module)'
 Write-Host ("RESULT pass=" + $pass + " fail=" + $fail)

@@ -103,3 +103,8 @@ export function getStatsOverview() {
 export function getStatsUsage(params) {
   return request.get('/admin/stats/usage', { params })
 }
+
+// 阶段 C 事件概览
+export function getEventsSummary() {
+  return request.get('/admin/events/summary')
+}
