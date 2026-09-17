@@ -2,18 +2,17 @@ package com.roomreservation.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.roomreservation.common.Result;
+import com.roomreservation.common.RuleCatalog;
 import com.roomreservation.entity.Banner;
 import com.roomreservation.entity.Notice;
-import com.roomreservation.entity.RuleConfig;
 import com.roomreservation.mapper.BannerMapper;
 import com.roomreservation.mapper.NoticeMapper;
-import com.roomreservation.mapper.RuleConfigMapper;
+import com.roomreservation.service.IRuleConfigService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +32,7 @@ public class ContentController {
     @Resource
     private NoticeMapper noticeMapper;
     @Resource
-    private RuleConfigMapper ruleConfigMapper;
+    private IRuleConfigService ruleConfigService;
 
     @GetMapping("/banners")
     public Result banners() {
@@ -52,14 +51,14 @@ public class ContentController {
     }
 
     /**
-     * 规则公开视图，供前端预约表单约束与提示
+     * 规则公开视图，供前端预约表单约束与提示。
+     * 取值走 RuleConfigService 的读取钳制，脏数据或绕过校验的写入不会透出给前端。
      */
     @GetMapping("/rules")
     public Result rules() {
         Map<String, Object> data = new LinkedHashMap<>();
-        List<RuleConfig> all = ruleConfigMapper.selectList(null);
-        for (RuleConfig cfg : all) {
-            data.put(cfg.getRuleKey(), cfg.getRuleValue());
+        for (RuleCatalog.Meta meta : RuleCatalog.all()) {
+            data.put(meta.key(), String.valueOf(ruleConfigService.getInt(meta.key(), meta.defaultValue())));
         }
         return Result.success(data);
     }

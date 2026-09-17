@@ -8,6 +8,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +51,15 @@ public class GlobalExceptionHandler {
         data.put("field", field);
         data.put("message", message);
         return Result.error(Constants.CODE_400, message, data);
+    }
+
+    /**
+     * 请求了不存在的接口，返回 404 业务码而不是笼统的系统异常，便于前端与联调定位
+     */
+    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
+    @ResponseBody
+    public Result handleNotFound(Exception e) {
+        return Result.error(Constants.CODE_404, "接口不存在，请检查请求路径与方法");
     }
 
     /**

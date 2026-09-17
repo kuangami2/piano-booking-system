@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.Map;
 
@@ -72,6 +73,14 @@ class GlobalExceptionHandlerTest {
         assertThat(result.getCode()).isEqualTo(Constants.CODE_400);
         assertThat(result.getMsg()).isEqualTo("参数校验失败");
         assertThat((Map<String, Object>) result.getData()).containsEntry("field", "");
+    }
+
+    @Test
+    @DisplayName("请求不存在的接口返回 404 而不是系统异常")
+    void noMappingReturns404() {
+        Result result = handler.handleNotFound(new NoHandlerFoundException("PUT", "/api/bookings/1/cancel", null));
+        assertThat(result.getCode()).isEqualTo(Constants.CODE_404);
+        assertThat(result.getMsg()).contains("接口不存在");
     }
 
     @Test

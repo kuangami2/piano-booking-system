@@ -1,6 +1,7 @@
 package com.roomreservation.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.roomreservation.common.RuleCatalog;
 import com.roomreservation.entity.RuleConfig;
 import com.roomreservation.mapper.RuleConfigMapper;
 import com.roomreservation.service.IRuleConfigService;
@@ -42,12 +43,13 @@ public class RuleConfigServiceImpl extends ServiceImpl<RuleConfigMapper, RuleCon
     public int getInt(String key, int defaultValue) {
         String value = cache.get(key);
         if (value == null) {
-            return defaultValue;
+            return RuleCatalog.clamp(key, defaultValue);
         }
         try {
-            return Integer.parseInt(value.trim());
+            // 统一钳制到合法区间，脏数据或绕过校验的写入不会导致除零等崩溃
+            return RuleCatalog.clamp(key, Integer.parseInt(value.trim()));
         } catch (NumberFormatException e) {
-            return defaultValue;
+            return RuleCatalog.clamp(key, defaultValue);
         }
     }
 
