@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.roomreservation.common.RuleKeys;
 import com.roomreservation.entity.RuleConfig;
 import com.roomreservation.exception.ServiceException;
+import com.roomreservation.service.CacheService;
 import com.roomreservation.service.IRuleConfigService;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,6 +24,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -35,6 +37,7 @@ import static org.mockito.Mockito.when;
 class AdminRuleServiceTest {
 
     @Mock private IRuleConfigService ruleConfigService;
+    @Mock private CacheService cacheService;
 
     @InjectMocks private AdminRuleService service;
 
@@ -120,6 +123,26 @@ class AdminRuleServiceTest {
         verify(ruleConfigService).update(any(Wrapper.class));
         verify(ruleConfigService).refreshCache();
         assertThat(result).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("改最小单位或提前天数时立刻失效空闲区间缓存")
+    void evictsFreeSlotCacheWhenSlotRuleChanged() {
+        givenCurrentRules();
+
+        service.batchUpdate(List.of(Map.of("key", RuleKeys.BOOKING_MIN_UNIT, "value", "60")));
+
+        verify(cacheService).evictByPrefix("free:");
+    }
+
+    @Test
+    @DisplayName("改与空闲区间无关的参数不动空闲区间缓存")
+    void keepsFreeSlotCacheWhenUnrelatedRuleChanged() {
+        givenCurrentRules();
+
+        service.batchUpdate(List.of(Map.of("key", RuleKeys.CREDIT_INITIAL, "value", "100")));
+
+        verify(cacheService, never()).evictByPrefix(anyString());
     }
 
     @Test

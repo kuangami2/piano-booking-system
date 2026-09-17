@@ -5,8 +5,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.roomreservation.common.Constants;
 import com.roomreservation.common.RuleCatalog;
+import com.roomreservation.common.RuleKeys;
 import com.roomreservation.entity.RuleConfig;
 import com.roomreservation.exception.ServiceException;
+import com.roomreservation.service.CacheService;
 import com.roomreservation.service.IRuleConfigService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -15,18 +17,28 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 管理端规则 Service：全量读取与批量更新，改后刷新缓存即时生效
  */
 @Service
 /**
- * 管理端规则业务：参数读取与批量保存并刷新缓存。
+ * 管理端规则业务：参数读取与批量保存，改后刷新参数缓存并失效受影响的派生缓存。
  */
 public class AdminRuleService {
 
+    /**
+     * 空闲查询按最小单位铺块、按提前天数裁剪日期，改这两项必须让 free 缓存立刻失效，
+     * 否则缓存存活期内展示口径与提交校验口径不一致。
+     */
+    private static final Set<String> FREE_SLOT_AFFECTING = Set.of(
+            RuleKeys.BOOKING_MIN_UNIT, RuleKeys.BOOKING_ADVANCE_DAYS);
+
     @Resource
     private IRuleConfigService ruleConfigService;
+    @Resource
+    private CacheService cacheService;
 
     /**
      * 全量规则参数，按 id 排序
@@ -83,6 +95,10 @@ public class AdminRuleService {
                     .set(RuleConfig::getRuleValue, entry.getValue()));
         }
         ruleConfigService.refreshCache();
+        // 派生缓存失效：空闲区间按旧粒度或旧提前天数算出的结果不能再展示
+        if (pending.keySet().stream().anyMatch(FREE_SLOT_AFFECTING::contains)) {
+            cacheService.evictByPrefix("free:");
+        }
         return listAll();
     }
 
